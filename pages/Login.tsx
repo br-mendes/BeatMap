@@ -1,12 +1,14 @@
 import React from 'react';
 import { BeatMapLogo } from '../components/BeatMapLogo';
+import { AlertCircle } from 'lucide-react';
 
 interface LoginProps {
   onLogin: () => void;
   onDemo: () => void;
+  error?: string | null;
 }
 
-export const Login: React.FC<LoginProps> = ({ onLogin, onDemo }) => {
+export const Login: React.FC<LoginProps> = ({ onLogin, onDemo, error }) => {
   return (
     <div className="min-h-screen bg-beatmap-dark flex items-center justify-center relative overflow-hidden">
       {/* Background Ambience */}
@@ -27,9 +29,19 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onDemo }) => {
           </span>
         </h2>
         
-        <p className="text-gray-400 mb-10 text-lg">
+        <p className="text-gray-400 mb-8 text-lg">
           Descubra lançamentos diários, filtre por seus gêneros favoritos e exporte playlists diretamente para sua conta.
         </p>
+
+        {error && (
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/50 rounded-xl flex items-start gap-3 text-left animate-in fade-in slide-in-from-top-2">
+            <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+            <div className="text-sm text-red-200">
+              <p className="font-bold mb-1">Erro de Autenticação</p>
+              <p>{error}</p>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-4">
           <button 

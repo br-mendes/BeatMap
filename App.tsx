@@ -16,6 +16,33 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isDemo, setIsDemo] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+
+  // Check for OAuth errors in URL on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    
+    const error = params.get('error') || hashParams.get('error');
+    const errorCode = params.get('error_code') || hashParams.get('error_code');
+    const errorDescription = params.get('error_description') || hashParams.get('error_description');
+
+    if (error) {
+      // Clear the URL to avoid user seeing the ugly parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+
+      if (errorCode === 'provider_email_needs_verification') {
+        setLoginError(
+          "O email da sua conta Spotify precisa ser verificado pelo Supabase. " +
+          "Um email de confirmação foi enviado para você. " +
+          "Se você é o administrador, verifique as configurações de 'Confirm Email' no painel do Supabase."
+        );
+      } else {
+        const decodedDesc = errorDescription ? decodeURIComponent(errorDescription).replace(/\+/g, ' ') : error;
+        setLoginError(`Erro no login: ${decodedDesc}`);
+      }
+    }
+  }, []);
 
   // Initialize Session
   useEffect(() => {
@@ -34,6 +61,7 @@ function App() {
       if (session) {
         setToken(session.provider_token || null);
         setView('dashboard');
+        setLoginError(null); // Clear errors on success
       } else if (!isDemo) {
         setView('login');
       }
@@ -73,6 +101,7 @@ function App() {
   };
 
   const handleLogin = async () => {
+    setLoginError(null);
     // Uses the scopes from the configuration
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'spotify',
@@ -84,12 +113,13 @@ function App() {
     });
     if (error) {
       console.error('Erro no login:', error.message);
-      alert('Erro ao conectar com Spotify: ' + error.message);
+      setLoginError('Erro ao iniciar conexão com Spotify: ' + error.message);
     }
   };
 
   const handleDemo = () => {
     setIsDemo(true);
+    setLoginError(null);
     setToken('mock-token'); // Triggers mock data in spotify.ts
     setView('dashboard');
   };
@@ -138,7 +168,7 @@ function App() {
   };
 
   if (view === 'login') {
-    return <Login onLogin={handleLogin} onDemo={handleDemo} />;
+    return <Login onLogin={handleLogin} onDemo={handleDemo} error={loginError} />;
   }
 
   return (
