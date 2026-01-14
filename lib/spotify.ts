@@ -1,4 +1,4 @@
-import { Album, Artist, Track, User } from '../types';
+import { Album, Artist, Track, User, TopArtistData } from '../types';
 
 const SPOTIFY_API_BASE = 'https://api.spotify.com/v1';
 
@@ -117,7 +117,6 @@ export const fetchUserProfile = async (token: string): Promise<User> => {
   }
 };
 
-// Modified to fetch more items initially to allow for client-side date filtering
 export const fetchNewReleases = async (token: string, limit = 50, offset = 0): Promise<Album[]> => {
   try {
     const res = await fetch(`${SPOTIFY_API_BASE}/browse/new-releases?country=BR&limit=${limit}&offset=${offset}`, {
@@ -132,19 +131,13 @@ export const fetchNewReleases = async (token: string, limit = 50, offset = 0): P
   }
 };
 
-// New function to search specifically for new tracks
 export const searchNewTracks = async (token: string, genre: string = '', limit = 50, offset = 0): Promise<Track[]> => {
     try {
         const year = new Date().getFullYear();
-        // Construct query: if genre exists use it, otherwise use tag:new or current year
         let query = `year:${year}`;
         if (genre) {
             query += ` genre:${encodeURIComponent(genre)}`;
         } else {
-            // "tag:new" works for albums mostly, for tracks we use year range and sort by popularity (or latest if possible, but Spotify search doesn't sort by date well)
-            // Adding a generic search term like 'a' or using a wildcard % isn't great, so we rely on year.
-            // Alternative: use recommendations endpoint if we had seeds.
-            // We'll filter strictly by date client-side.
             query = `year:${year} tag:new`; 
         }
 
@@ -179,7 +172,6 @@ export const searchByGenre = async (token: string, genre: string, type: 'album' 
 
 export const getAlbums = async (token: string, ids: string[]): Promise<Album[]> => {
   if (ids.length === 0) return [];
-  // Note: Spotify allows max 20 IDs per request.
   const chunks = [];
   for (let i = 0; i < ids.length; i += 20) {
       chunks.push(ids.slice(i, i + 20));
@@ -232,7 +224,6 @@ export const createPlaylist = async (token: string, userId: string, name: string
 
 export const addTracksToPlaylist = async (token: string, playlistId: string, uris: string[]): Promise<void> => {
   if (!playlistId.startsWith('mock-') && uris.length > 0) {
-      // Chunk requests because limit is 100 uris per request
       const chunks = [];
       for (let i = 0; i < uris.length; i += 100) {
           chunks.push(uris.slice(i, i + 100));
@@ -259,6 +250,22 @@ export const searchTracks = async (token: string, query: string): Promise<Track[
         const data = await res.json();
         return data.tracks.items;
     } catch (e) {
+        return [];
+    }
+}
+
+export const fetchUserTopItems = async (token: string, type: 'artists' | 'tracks', timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term', limit = 20): Promise<any[]> => {
+    try {
+        const res = await fetch(`${SPOTIFY_API_BASE}/me/top/${type}?time_range=${timeRange}&limit=${limit}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Falha ao buscar top items');
+        const data = await res.json();
+        return data.items;
+    } catch (e) {
+        console.error(e);
+        // Mock fallback
+        if(token.startsWith('mock') && type === 'artists') return mockArtists;
         return [];
     }
 }

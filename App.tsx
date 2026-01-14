@@ -7,12 +7,14 @@ import { Layout } from './components/Layout';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { History } from './pages/History';
+import { Stats } from './pages/Stats';
+import { Settings } from './pages/Settings';
 
 function App() {
   const [session, setSession] = useState<any>(null);
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [view, setView] = useState('login'); // 'login' | 'dashboard' | 'history' | 'playlists'
+  const [view, setView] = useState('login'); // 'login' | 'dashboard' | 'history' | 'playlists' | 'stats'
   const [activeTab, setActiveTab] = useState('dashboard');
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isDemo, setIsDemo] = useState(false);
@@ -187,8 +189,20 @@ function App() {
         />
       )}
       
+      {activeTab === 'stats' && (
+        <Stats 
+            token={token}
+            userId={user?.id || null}
+            supabaseUserId={session?.user?.id}
+        />
+      )}
+
       {activeTab === 'history' && (
         <History items={history} onDelete={handleDeletePlaylist} />
+      )}
+      
+      {activeTab === 'settings' && (
+        <Settings />
       )}
 
       {activeTab === 'playlists' && (

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Disc, History, LayoutDashboard, Settings } from 'lucide-react';
+import { Disc, History, LayoutDashboard, BarChart2, Settings } from 'lucide-react';
 import { Navbar } from './Navbar';
 import { User } from '../types';
 
@@ -29,8 +29,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, active
 
   return (
     <div className="min-h-screen bg-beatmap-dark text-white flex flex-col md:flex-row">
-      {/* Mobile Sidebar (Bottom Nav) could be added here for mobile-first strictness, but for now using standard Sidebar logic adapted for responsive */}
-      
       {/* Sidebar - Desktop */}
       <aside className="hidden md:flex flex-col w-64 border-r border-white/10 h-screen sticky top-0 bg-beatmap-card/30">
         <div className="p-6">
@@ -38,17 +36,20 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, active
         </div>
         <div className="flex-1 px-3 space-y-1">
           <NavItem id="dashboard" icon={LayoutDashboard} label="Descobrir" />
+          <NavItem id="stats" icon={BarChart2} label="Minhas Estatísticas" />
           <NavItem id="history" icon={History} label="Histórico" />
           <NavItem id="playlists" icon={Disc} label="Minhas Playlists" />
+        </div>
+        
+        <div className="px-3 pb-4">
+             <div className="h-px bg-white/10 mb-4 mx-2"></div>
+             <NavItem id="settings" icon={Settings} label="Configurações" />
         </div>
         
         <div className="p-4 border-t border-white/10">
            <div className="bg-gradient-to-br from-beatmap-primary/20 to-beatmap-secondary/20 p-4 rounded-xl border border-white/5">
              <h4 className="font-bold text-sm mb-1">BeatMap Pro</h4>
-             <p className="text-xs text-gray-400 mb-3">Desbloqueie análises profundas.</p>
-             <button className="w-full py-1.5 text-xs font-bold bg-white text-black rounded hover:bg-gray-200 transition-colors">
-               Em breve
-             </button>
+             <p className="text-xs text-gray-400 mb-3">Sincronização automática em breve.</p>
            </div>
         </div>
       </aside>
@@ -65,15 +66,18 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, active
         <div className="md:hidden fixed bottom-0 left-0 right-0 bg-beatmap-card border-t border-white/10 px-4 py-2 flex justify-around z-50 pb-safe">
             <button onClick={() => setActiveTab('dashboard')} className={`p-2 flex flex-col items-center ${activeTab === 'dashboard' ? 'text-beatmap-primary' : 'text-gray-400'}`}>
               <LayoutDashboard size={20} />
-              <span className="text-[10px] mt-1">Descobrir</span>
+            </button>
+            <button onClick={() => setActiveTab('stats')} className={`p-2 flex flex-col items-center ${activeTab === 'stats' ? 'text-beatmap-primary' : 'text-gray-400'}`}>
+              <BarChart2 size={20} />
             </button>
             <button onClick={() => setActiveTab('history')} className={`p-2 flex flex-col items-center ${activeTab === 'history' ? 'text-beatmap-primary' : 'text-gray-400'}`}>
               <History size={20} />
-              <span className="text-[10px] mt-1">Histórico</span>
             </button>
              <button onClick={() => setActiveTab('playlists')} className={`p-2 flex flex-col items-center ${activeTab === 'playlists' ? 'text-beatmap-primary' : 'text-gray-400'}`}>
               <Disc size={20} />
-              <span className="text-[10px] mt-1">Playlists</span>
+            </button>
+            <button onClick={() => setActiveTab('settings')} className={`p-2 flex flex-col items-center ${activeTab === 'settings' ? 'text-beatmap-primary' : 'text-gray-400'}`}>
+              <Settings size={20} />
             </button>
         </div>
       </div>

@@ -2,6 +2,7 @@ import React from 'react';
 import { User } from '../types';
 import { BeatMapLogo } from './BeatMapLogo';
 import { LogOut, User as UserIcon } from 'lucide-react';
+import { NotificationCenter } from './NotificationCenter';
 
 interface NavbarProps {
   user: User | null;
@@ -16,6 +17,10 @@ export const Navbar: React.FC<NavbarProps> = ({ user, onLogout }) => {
       <div className="flex items-center gap-4">
         {user ? (
           <div className="flex items-center gap-3">
+             {/* Notification Center */}
+            <NotificationCenter userId={user.id} />
+            <div className="h-6 w-px bg-white/10 mx-1"></div>
+
             <div className="hidden md:flex flex-col items-end">
               <span className="text-sm font-medium text-white">{user.display_name}</span>
               <span className="text-xs text-gray-400 capitalize">{user.product} Plan</span>

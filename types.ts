@@ -103,3 +103,53 @@ export interface DbPlaylistTrack {
   release_date: string;
   image_url: string;
 }
+
+// Analytics Types
+export interface UserStats {
+  totalPlaylists: number;
+  totalTracksSaved: number;
+  totalTimeMs: number;
+  uniqueArtists: number;
+  topGenres: { name: string; count: number; percent: number }[];
+  activityByMonth: { month: string; playlists: number; tracks: number }[];
+}
+
+export interface TopArtistData {
+  id: string;
+  name: string;
+  image: string;
+  popularity: number;
+  genres: string[];
+  external_url: string;
+}
+
+// Notification Types
+export type NotificationType = 'release' | 'system' | 'recommendation';
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  title: string;
+  message: string;
+  type: NotificationType;
+  is_read: boolean;
+  created_at: string;
+  link?: string;
+  image_url?: string;
+}
+
+export interface FollowedArtist {
+  id: string;
+  user_id: string;
+  artist_id: string;
+  artist_name: string;
+  image_url: string;
+  created_at: string;
+}
+
+export interface UserSettings {
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+  weeklySummary: boolean;
+  notifyNewReleases: boolean;
+}
