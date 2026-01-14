@@ -1,6 +1,8 @@
 import { supabase } from './supabase';
-import { DbPlaylist, DbPlaylistTrack, HistoryItem, Track, Album, UserStats, Notification, FollowedArtist, WeeklyDiscovery, RecommendedTrack } from '../types';
+import { DbPlaylist, DbPlaylistTrack, HistoryItem, Track, Album, UserStats, Notification, FollowedArtist, WeeklyDiscovery, RecommendedTrack, LayoutSettings, UserSettings, Theme } from '../types';
 import { fetchRecommendations, fetchUserTopItems } from './spotify';
+
+// --- HISTORY & PLAYLISTS ---
 
 export const getUserHistory = async (userId: string): Promise<HistoryItem[]> => {
   try {
@@ -83,6 +85,9 @@ export const savePlaylistToDb = async (
       
       if (tracksError) console.error('Error inserting tracks:', tracksError);
     }
+    
+    // 4. Update Analytics (Async Fire & Forget)
+    updateUserAnalytics(userId);
 
     return playlistData;
   } catch (e) {
@@ -101,184 +106,238 @@ export const deletePlaylist = async (playlistId: string) => {
   if (error) throw error;
 };
 
-export const getUserStatistics = async (userId: string): Promise<UserStats> => {
+// --- ANALYTICS ---
+
+const updateUserAnalytics = async (userId: string) => {
+    // This calls the expensive calculation and saves to user_analytics
+    // Useful for caching stats to avoid re-calculating on every dashboard load in future
     try {
-        // Fetch all user playlists and their tracks
-        const { data: playlists, error: pError } = await supabase
-            .from('playlists')
-            .select('id, created_at')
-            .eq('user_id', userId);
-        
-        if (pError || !playlists) throw pError || new Error("No playlists");
-
-        const playlistIds = playlists.map(p => p.id);
-        
-        let tracks: any[] = [];
-        if (playlistIds.length > 0) {
-            const { data: tData, error: tError } = await supabase
-                .from('playlist_tracks')
-                .select('*')
-                .in('playlist_id', playlistIds);
-            
-            if (tError) console.error(tError);
-            tracks = tData || [];
-        }
-
-        // 1. Basic Counts
-        const totalPlaylists = playlists.length;
-        const totalTracksSaved = tracks.length;
-        const totalTimeMs = tracks.reduce((acc, curr) => acc + curr.duration_ms, 0);
-
-        // 2. Unique Artists
-        const uniqueArtists = new Set(tracks.map(t => t.artist_name)).size;
-
-        // 3. Genres
-        const genreCounts: Record<string, number> = {};
-        tracks.forEach(t => {
-            if (t.genre) {
-                genreCounts[t.genre] = (genreCounts[t.genre] || 0) + 1;
-            }
+        const stats = await calculateUserStatistics(userId);
+        await supabase.from('user_analytics').upsert({
+            user_id: userId,
+            total_playlists: stats.totalPlaylists,
+            total_tracks_saved: stats.totalTracksSaved,
+            total_time_ms: stats.totalTimeMs,
+            top_genres: stats.topGenres,
+            activity_history: stats.activityByMonth,
+            last_updated: new Date().toISOString()
         });
-
-        const topGenres = Object.entries(genreCounts)
-            .map(([name, count]) => ({ name, count, percent: 0 }))
-            .sort((a, b) => b.count - a.count)
-            .slice(0, 10);
-        
-        // Calculate percentages
-        const totalGenreCount = Object.values(genreCounts).reduce((a, b) => a + b, 0);
-        topGenres.forEach(g => g.percent = Math.round((g.count / totalGenreCount) * 100));
-
-        // 4. Activity by Month
-        const activityMap: Record<string, { playlists: number, tracks: number }> = {};
-        const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-
-        // Initialize last 6 months
-        const today = new Date();
-        for(let i=5; i>=0; i--) {
-             const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-             const key = `${months[d.getMonth()]}`;
-             activityMap[key] = { playlists: 0, tracks: 0 };
-        }
-
-        playlists.forEach(p => {
-            const d = new Date(p.created_at);
-            const key = months[d.getMonth()];
-            if (activityMap[key]) {
-                activityMap[key].playlists++;
-            }
-        });
-
-        tracks.forEach(t => {
-            const playlist = playlists.find(p => p.id === t.playlist_id);
-            if (playlist) {
-                const d = new Date(playlist.created_at);
-                const key = months[d.getMonth()];
-                if (activityMap[key]) {
-                    activityMap[key].tracks++;
-                }
-            }
-        });
-
-        const activityByMonth = Object.entries(activityMap).map(([month, data]) => ({
-            month,
-            playlists: data.playlists,
-            tracks: data.tracks
-        }));
-
-        return {
-            totalPlaylists,
-            totalTracksSaved,
-            totalTimeMs,
-            uniqueArtists,
-            topGenres,
-            activityByMonth
-        };
-
-    } catch (e) {
-        console.error("Stats Error", e);
-        return {
-            totalPlaylists: 0,
-            totalTracksSaved: 0,
-            totalTimeMs: 0,
-            uniqueArtists: 0,
-            topGenres: [],
-            activityByMonth: []
-        };
+    } catch(e) {
+        console.error("Failed to update analytics cache", e);
     }
 };
 
-// --- Notifications & Following System (Simulated w/ LocalStorage/Supabase Hybrid) ---
+const calculateUserStatistics = async (userId: string): Promise<UserStats> => {
+    // Calculates fresh stats from raw playlist data
+    const { data: playlists } = await supabase
+        .from('playlists')
+        .select('id, created_at')
+        .eq('user_id', userId);
+    
+    if (!playlists) return {
+        totalPlaylists: 0, totalTracksSaved: 0, totalTimeMs: 0, uniqueArtists: 0, topGenres: [], activityByMonth: []
+    };
+
+    const playlistIds = playlists.map(p => p.id);
+    
+    let tracks: any[] = [];
+    if (playlistIds.length > 0) {
+        const { data: tData } = await supabase
+            .from('playlist_tracks')
+            .select('*')
+            .in('playlist_id', playlistIds);
+        tracks = tData || [];
+    }
+
+    const totalPlaylists = playlists.length;
+    const totalTracksSaved = tracks.length;
+    const totalTimeMs = tracks.reduce((acc, curr) => acc + curr.duration_ms, 0);
+    const uniqueArtists = new Set(tracks.map(t => t.artist_name)).size;
+
+    const genreCounts: Record<string, number> = {};
+    tracks.forEach(t => {
+        if (t.genre) genreCounts[t.genre] = (genreCounts[t.genre] || 0) + 1;
+    });
+
+    const topGenres = Object.entries(genreCounts)
+        .map(([name, count]) => ({ name, count, percent: 0 }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+    
+    const totalGenreCount = Object.values(genreCounts).reduce((a, b) => a + b, 0);
+    topGenres.forEach(g => g.percent = Math.round((g.count / totalGenreCount) * 100));
+
+    // Activity
+    const activityMap: Record<string, { playlists: number, tracks: number }> = {};
+    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    const today = new Date();
+    for(let i=5; i>=0; i--) {
+            const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+            const key = `${months[d.getMonth()]}`;
+            activityMap[key] = { playlists: 0, tracks: 0 };
+    }
+    playlists.forEach(p => {
+        const d = new Date(p.created_at);
+        const key = months[d.getMonth()];
+        if (activityMap[key]) activityMap[key].playlists++;
+    });
+    tracks.forEach(t => {
+        const playlist = playlists.find(p => p.id === t.playlist_id);
+        if (playlist) {
+            const d = new Date(playlist.created_at);
+            const key = months[d.getMonth()];
+            if (activityMap[key]) activityMap[key].tracks++;
+        }
+    });
+
+    return {
+        totalPlaylists,
+        totalTracksSaved,
+        totalTimeMs,
+        uniqueArtists,
+        topGenres,
+        activityByMonth: Object.entries(activityMap).map(([month, data]) => ({ month, ...data }))
+    };
+};
+
+export const getUserStatistics = async (userId: string): Promise<UserStats> => {
+    // Try to get cached analytics first
+    const { data: cached } = await supabase
+        .from('user_analytics')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+    
+    if (cached) {
+        // Return cached, but fire an update in background if old
+        const lastUpdate = new Date(cached.last_updated);
+        const hoursDiff = (new Date().getTime() - lastUpdate.getTime()) / (1000 * 60 * 60);
+        if (hoursDiff > 24) {
+             updateUserAnalytics(userId); // refresh silently
+        }
+        return {
+            totalPlaylists: cached.total_playlists,
+            totalTracksSaved: cached.total_tracks_saved,
+            totalTimeMs: cached.total_time_ms,
+            uniqueArtists: 0, // Not stored in basic schema, could calculate
+            topGenres: cached.top_genres,
+            activityByMonth: cached.activity_history
+        };
+    }
+
+    // Fallback to calculation
+    return calculateUserStatistics(userId);
+};
+
+// --- PREFERENCES & SETTINGS ---
+
+export const getUserPreferences = async (userId: string) => {
+    const { data } = await supabase
+        .from('user_preferences')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+    return data;
+};
+
+export const saveUserPreferences = async (
+    userId: string, 
+    preferences: Partial<{
+        theme_id: string;
+        custom_theme_data: Theme;
+        layout_settings: LayoutSettings;
+        notification_settings: UserSettings;
+    }>
+) => {
+    // Upsert preference
+    await supabase.from('user_preferences').upsert({
+        user_id: userId,
+        ...preferences,
+        updated_at: new Date().toISOString()
+    });
+};
+
+// --- NOTIFICATIONS ---
 
 export const getNotifications = async (userId: string): Promise<Notification[]> => {
-    // In a real app, this would query the 'notifications' table
-    // For this demo, we'll return mock data combined with localStorage state
-    const mock: Notification[] = [
-        {
-            id: 'notif-1',
-            user_id: userId,
-            title: 'Novo Lançamento!',
-            message: 'Alok lançou um novo single: "Deep Down". Ouça agora.',
-            type: 'release',
-            is_read: false,
-            created_at: new Date().toISOString(),
-            image_url: 'https://images.unsplash.com/photo-1493225255756-d9584f8606e9?w=100&h=100&fit=crop'
-        },
-        {
-            id: 'notif-2',
-            user_id: userId,
-            title: 'Resumo Semanal',
-            message: 'Seu resumo da semana está pronto. Você descobriu 12 novas músicas.',
-            type: 'system',
-            is_read: true,
-            created_at: new Date(Date.now() - 86400000).toISOString(),
-        }
-    ];
-
-    // Check localStorage for read status overrides
-    const readIds = JSON.parse(localStorage.getItem(`read_notifs_${userId}`) || '[]');
-    return mock.map(n => ({
-        ...n,
-        is_read: n.is_read || readIds.includes(n.id)
-    }));
+    const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(50);
+    
+    if (error) console.error(error);
+    return data || [];
 };
 
 export const markNotificationAsRead = async (userId: string, notificationId: string) => {
-    // Simulate DB update
-    const readIds = JSON.parse(localStorage.getItem(`read_notifs_${userId}`) || '[]');
-    if (!readIds.includes(notificationId)) {
-        readIds.push(notificationId);
-        localStorage.setItem(`read_notifs_${userId}`, JSON.stringify(readIds));
-    }
+    await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('id', notificationId)
+        .eq('user_id', userId); // security
 };
 
 export const markAllNotificationsAsRead = async (userId: string) => {
-    const notifs = await getNotifications(userId);
-    const readIds = notifs.map(n => n.id);
-    localStorage.setItem(`read_notifs_${userId}`, JSON.stringify(readIds));
+    await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('user_id', userId);
 };
 
+// --- FOLLOWED ARTISTS ---
+
 export const getFollowedArtists = async (userId: string): Promise<string[]> => {
-    // Returns list of Artist IDs
-    return JSON.parse(localStorage.getItem(`followed_artists_${userId}`) || '[]');
+    const { data } = await supabase
+        .from('user_followed_artists')
+        .select('artist_id')
+        .eq('user_id', userId);
+    
+    return data?.map(d => d.artist_id) || [];
 };
 
 export const toggleFollowArtist = async (userId: string, artistId: string, artistName: string, imageUrl: string) => {
-    const current = await getFollowedArtists(userId);
-    let updated;
-    
-    if (current.includes(artistId)) {
-        updated = current.filter(id => id !== artistId);
+    // Check if exists
+    const { data: existing } = await supabase
+        .from('user_followed_artists')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('artist_id', artistId)
+        .single();
+
+    if (existing) {
+        // Unfollow
+        await supabase
+            .from('user_followed_artists')
+            .delete()
+            .eq('id', existing.id);
+        return false;
     } else {
-        updated = [...current, artistId];
-        // Simulate sending a "New Follower" notification to system (noop)
+        // Follow
+        await supabase
+            .from('user_followed_artists')
+            .insert({
+                user_id: userId,
+                artist_id: artistId,
+                artist_name: artistName,
+                image_url: imageUrl
+            });
+        
+        // Create Notification for system feedback
+        await supabase.from('notifications').insert({
+            user_id: userId,
+            title: 'Novo Artista Seguido',
+            message: `Você agora está recebendo alertas de ${artistName}.`,
+            type: 'system',
+            image_url: imageUrl
+        });
+
+        return true;
     }
-    
-    localStorage.setItem(`followed_artists_${userId}`, JSON.stringify(updated));
-    return updated.includes(artistId);
 };
 
-// --- Weekly Discovery System ---
+// --- WEEKLY DISCOVERY ---
 
 const getWeekId = () => {
     const d = new Date();
@@ -291,70 +350,112 @@ const getWeekId = () => {
 
 export const getWeeklyDiscovery = async (token: string, userId: string): Promise<WeeklyDiscovery> => {
     const weekId = getWeekId();
-    const storageKey = `weekly_discovery_${userId}_${weekId}`;
     
-    const stored = localStorage.getItem(storageKey);
-    if (stored) {
-        return JSON.parse(stored);
+    // Check DB first
+    const { data: existing } = await supabase
+        .from('weekly_discovery')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('week_id', weekId)
+        .single();
+    
+    if (existing) {
+        return {
+            id: existing.id,
+            weekId: existing.week_id,
+            tracks: existing.tracks,
+            savedToLibrary: existing.saved_to_library,
+            generatedAt: existing.generated_at
+        };
     }
 
-    // Generate New Discovery
+    // Generate New Discovery if not found
     console.log("Generating new Weekly Discovery...");
     
-    // 1. Get Top Artists for seeding
     const topArtists = await fetchUserTopItems(token, 'artists', 'short_term', 5);
     const seedIds = topArtists.map((a: any) => a.id).slice(0, 3);
     const seedNames = topArtists.map((a: any) => a.name).slice(0, 3);
     
-    // 2. Fetch Recommendations
-    // If no top artists (new user), fetch recommendations for 'pop'
     const tracks = await fetchRecommendations(token, seedIds, [], [], 30);
     
-    // 3. Format
     const reasonText = seedNames.length > 0 
         ? `Baseado em ${seedNames.join(', ')} e outros.`
         : `Baseado nas tendências de hoje.`;
 
-    const discovery: WeeklyDiscovery = {
-        id: `wd-${weekId}`,
-        weekId: weekId,
-        generatedAt: new Date().toISOString(),
-        savedToLibrary: false,
-        tracks: tracks.map(t => ({
-            ...t,
-            reason: reasonText,
-            feedback: null
-        }))
-    };
+    const discoveryTracks = tracks.map(t => ({
+        ...t,
+        reason: reasonText,
+        feedback: null
+    }));
 
-    localStorage.setItem(storageKey, JSON.stringify(discovery));
-    return discovery;
+    // Save to DB
+    const { data: newRecord, error } = await supabase
+        .from('weekly_discovery')
+        .insert({
+            user_id: userId,
+            week_id: weekId,
+            tracks: discoveryTracks
+        })
+        .select()
+        .single();
+
+    if (error || !newRecord) {
+        console.error("Failed to save discovery", error);
+        // Fallback to in-memory return
+        return {
+            id: 'temp',
+            weekId,
+            tracks: discoveryTracks,
+            savedToLibrary: false,
+            generatedAt: new Date().toISOString()
+        };
+    }
+
+    return {
+        id: newRecord.id,
+        weekId: newRecord.week_id,
+        tracks: newRecord.tracks,
+        savedToLibrary: newRecord.saved_to_library,
+        generatedAt: newRecord.generated_at
+    };
 };
 
-export const updateDiscoveryFeedback = (userId: string, weekId: string, trackId: string, type: 'like' | 'dislike') => {
-    const storageKey = `weekly_discovery_${userId}_${weekId}`;
-    const stored = localStorage.getItem(storageKey);
-    if (!stored) return;
+export const updateDiscoveryFeedback = async (userId: string, weekId: string, trackId: string, type: 'like' | 'dislike') => {
+    // Fetch current
+    const { data: existing } = await supabase
+        .from('weekly_discovery')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('week_id', weekId)
+        .single();
+    
+    if (!existing) return null;
 
-    const data: WeeklyDiscovery = JSON.parse(stored);
-    const updatedTracks = data.tracks.map(t => {
+    const updatedTracks = (existing.tracks as RecommendedTrack[]).map(t => {
         if (t.id === trackId) {
             return { ...t, feedback: t.feedback === type ? null : type };
         }
         return t;
     });
 
-    const updatedData = { ...data, tracks: updatedTracks };
-    localStorage.setItem(storageKey, JSON.stringify(updatedData));
-    return updatedData;
+    await supabase
+        .from('weekly_discovery')
+        .update({ tracks: updatedTracks })
+        .eq('id', existing.id);
+    
+    return {
+        id: existing.id,
+        weekId: existing.week_id,
+        tracks: updatedTracks,
+        savedToLibrary: existing.saved_to_library,
+        generatedAt: existing.generated_at
+    };
 };
 
-export const markDiscoverySaved = (userId: string, weekId: string) => {
-    const storageKey = `weekly_discovery_${userId}_${weekId}`;
-    const stored = localStorage.getItem(storageKey);
-    if (!stored) return;
-
-    const data = JSON.parse(stored);
-    data.savedToLibrary = true;
-    localStorage.setItem(storageKey, JSON.stringify(data));
+export const markDiscoverySaved = async (userId: string, weekId: string) => {
+    await supabase
+        .from('weekly_discovery')
+        .update({ saved_to_library: true })
+        .eq('user_id', userId)
+        .eq('week_id', weekId);
 };

@@ -199,3 +199,12 @@ export interface LayoutSettings {
   density: AppDensity;
   sidebarPosition: SidebarPosition;
 }
+
+// Preference Table Mapped Type
+export interface UserPreferencesRecord {
+  user_id: string;
+  theme_id: string;
+  custom_theme_data: Theme | null;
+  layout_settings: LayoutSettings;
+  notification_settings: UserSettings;
+}

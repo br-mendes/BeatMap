@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { LayoutSettings, LayoutMode, AppFontSize, AppDensity, SidebarPosition } from '../types';
+import { supabase } from '../lib/supabase';
+import { saveUserPreferences, getUserPreferences } from '../lib/db';
 
 interface LayoutContextType {
   settings: LayoutSettings;
@@ -22,8 +24,10 @@ const LayoutContext = createContext<LayoutContextType | undefined>(undefined);
 export const LayoutProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<LayoutSettings>(DEFAULT_SETTINGS);
   const [presets, setPresets] = useState<string[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
+    // 1. Load from LocalStorage (Fast First Paint)
     const saved = localStorage.getItem('beatmap_layout');
     if (saved) {
       try {
@@ -33,16 +37,45 @@ export const LayoutProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
     }
     
-    // Load presets list
+    // 2. Load presets
     const savedPresets = localStorage.getItem('beatmap_layout_presets');
     if (savedPresets) {
         setPresets(JSON.parse(savedPresets).map((p: any) => p.name));
     }
+
+    // 3. Listen for Auth to Sync DB
+    supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+            setUserId(session.user.id);
+            fetchRemoteSettings(session.user.id);
+        }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (session?.user) {
+            setUserId(session.user.id);
+            fetchRemoteSettings(session.user.id);
+        } else {
+            setUserId(null);
+        }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
+  const fetchRemoteSettings = async (uid: string) => {
+      try {
+          const prefs = await getUserPreferences(uid);
+          if (prefs?.layout_settings) {
+              setSettings(prefs.layout_settings);
+              localStorage.setItem('beatmap_layout', JSON.stringify(prefs.layout_settings));
+          }
+      } catch (e) {
+          console.error(e);
+      }
+  };
+
   useEffect(() => {
-    localStorage.setItem('beatmap_layout', JSON.stringify(settings));
-    
     // Apply Font Size to Root
     const root = document.documentElement;
     root.classList.remove('text-sm', 'text-base', 'text-lg');
@@ -50,7 +83,14 @@ export const LayoutProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (settings.fontSize === 'normal') root.classList.add('text-base');
     if (settings.fontSize === 'large') root.classList.add('text-lg');
 
-  }, [settings]);
+    // Save to DB (Debounced ideal, but here direct)
+    if (userId) {
+        saveUserPreferences(userId, { layout_settings: settings });
+    }
+    // Save to Local
+    localStorage.setItem('beatmap_layout', JSON.stringify(settings));
+
+  }, [settings, userId]);
 
   const updateSettings = (newSettings: Partial<LayoutSettings>) => {
     setSettings(prev => ({ ...prev, ...newSettings }));
