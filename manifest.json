@@ -1,7 +1,7 @@
 {
-  "name": "BeatMap - Mapeando o som do seu mundo",
+  "name": "BeatMap",
   "short_name": "BeatMap",
-  "description": "Descubra novos lançamentos musicais, crie playlists e acompanhe suas estatísticas de escuta",
+  "description": "Mapeando o som do seu mundo",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
@@ -12,44 +12,8 @@
   "categories": ["music", "entertainment"],
   "icons": [
     {
-      "src": "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=72&h=72&fit=crop",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=96&h=96&fit=crop",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=128&h=128&fit=crop",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=144&h=144&fit=crop",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=152&h=152&fit=crop",
-      "sizes": "152x152",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
       "src": "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=192&h=192&fit=crop",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=384&h=384&fit=crop",
-      "sizes": "384x384",
       "type": "image/png",
       "purpose": "any maskable"
     },

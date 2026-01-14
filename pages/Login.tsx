@@ -10,7 +10,7 @@ interface LoginProps {
 
 export const Login: React.FC<LoginProps> = ({ onLogin, onDemo, error }) => {
   return (
-    <div className="min-h-screen bg-beatmap-dark flex items-center justify-center relative overflow-hidden">
+    <div className="min-h-screen bg-beatmap-dark flex items-center justify-center relative overflow-hidden transition-colors duration-300">
       {/* Background Ambience */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
         <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-beatmap-primary/20 rounded-full blur-[120px] animate-pulse-slow"></div>
@@ -22,14 +22,14 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onDemo, error }) => {
           <BeatMapLogo size="xl" />
         </div>
         
-        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+        <h2 className="text-3xl md:text-4xl font-bold text-beatmap-text mb-4">
           Mapeando o som <br/>
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-beatmap-primary to-beatmap-secondary">
             do seu mundo.
           </span>
         </h2>
         
-        <p className="text-gray-400 mb-8 text-lg">
+        <p className="text-beatmap-muted mb-8 text-lg">
           Descubra lançamentos diários, filtre por seus gêneros favoritos e exporte playlists diretamente para sua conta.
         </p>
 
@@ -56,13 +56,13 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onDemo, error }) => {
           
           <button 
             onClick={onDemo}
-            className="w-full bg-white/10 hover:bg-white/20 text-white font-medium py-3 px-6 rounded-full transition-all border border-white/5 backdrop-blur-md"
+            className="w-full bg-beatmap-text/10 hover:bg-beatmap-text/20 text-beatmap-text font-medium py-3 px-6 rounded-full transition-all border border-beatmap-border/10 backdrop-blur-md"
           >
             Modo Demonstração
           </button>
         </div>
 
-        <p className="mt-8 text-xs text-gray-500">
+        <p className="mt-8 text-xs text-beatmap-muted">
           Ao entrar, você concorda com nossos Termos de Serviço e Política de Privacidade.
         </p>
       </div>

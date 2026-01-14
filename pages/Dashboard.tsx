@@ -235,7 +235,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
       <div 
         key={item.id} 
         onClick={() => toggleSelection(item.id)}
-        className={`group relative bg-beatmap-card rounded-xl p-4 transition-all duration-300 hover:bg-white/5 cursor-pointer border ${isSelected ? 'border-beatmap-primary shadow-[0_0_15px_rgba(139,92,246,0.3)]' : 'border-transparent hover:border-white/10'}`}
+        className={`group relative bg-beatmap-card rounded-xl p-4 transition-all duration-300 hover:bg-beatmap-text/5 cursor-pointer border ${isSelected ? 'border-beatmap-primary shadow-[0_0_15px_rgba(139,92,246,0.3)]' : 'border-transparent hover:border-beatmap-border/10'}`}
       >
         <div className="relative aspect-square mb-4 rounded-lg overflow-hidden shadow-lg bg-black/40">
           {image && <img src={image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>}
@@ -264,16 +264,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
           )}
         </div>
 
-        <h3 className="font-semibold text-white truncate mb-1 text-sm" title={item.name}>{item.name}</h3>
-        <p className="text-xs text-gray-400 truncate">{item.artists?.map(a => a.name).join(', ')}</p>
+        <h3 className="font-semibold text-beatmap-text truncate mb-1 text-sm" title={item.name}>{item.name}</h3>
+        <p className="text-xs text-beatmap-muted truncate">{item.artists?.map(a => a.name).join(', ')}</p>
         
-        <div className="mt-3 flex items-center justify-between text-[10px] text-gray-500">
+        <div className="mt-3 flex items-center justify-between text-[10px] text-beatmap-muted/80">
           <span className="flex items-center gap-1">
             <Calendar size={10} />
             {releaseDate ? new Date(releaseDate).toLocaleDateString('pt-BR') : 'N/A'}
           </span>
           {filters.contentType === 'albums' && (
-              <span className="bg-white/10 px-1.5 py-0.5 rounded text-[9px] uppercase">
+              <span className="bg-beatmap-text/10 px-1.5 py-0.5 rounded text-[9px] uppercase">
                 {(item as Album).album_type}
               </span>
           )}
@@ -296,7 +296,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
         <div 
             key={item.id}
             onClick={() => toggleSelection(item.id)}
-            className={`flex items-center gap-4 p-3 rounded-lg cursor-pointer transition-colors border-l-4 ${isSelected ? 'bg-white/10 border-beatmap-primary' : 'hover:bg-white/5 border-transparent'}`}
+            className={`flex items-center gap-4 p-3 rounded-lg cursor-pointer transition-colors border-l-4 ${isSelected ? 'bg-beatmap-text/10 border-beatmap-primary' : 'hover:bg-beatmap-text/5 border-transparent'}`}
         >
             <div className="relative w-12 h-12 flex-shrink-0">
                 {image && <img src={image} className="w-full h-full rounded object-cover" alt="" />}
@@ -311,16 +311,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
             </div>
             
             <div className="flex-1 min-w-0">
-                <div className="font-medium text-white truncate">{item.name}</div>
-                <div className="text-sm text-gray-400 truncate">{item.artists?.map(a => a.name).join(', ')}</div>
+                <div className="font-medium text-beatmap-text truncate">{item.name}</div>
+                <div className="text-sm text-beatmap-muted truncate">{item.artists?.map(a => a.name).join(', ')}</div>
             </div>
 
-            <div className="hidden sm:block text-sm text-gray-500 w-32 text-right">
+            <div className="hidden sm:block text-sm text-beatmap-muted w-32 text-right">
                 {releaseDate ? new Date(releaseDate).toLocaleDateString('pt-BR') : '-'}
             </div>
 
             <div className="w-8 flex justify-center">
-                 {isSelected ? <Check size={18} className="text-beatmap-primary" /> : <div className="w-4 h-4 rounded-full border border-gray-600"></div>}
+                 {isSelected ? <Check size={18} className="text-beatmap-primary" /> : <div className="w-4 h-4 rounded-full border border-beatmap-muted/50"></div>}
             </div>
         </div>
       )
@@ -333,21 +333,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
       {/* 1. Header & Tabs */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4">
          <div>
-            <h1 className="text-3xl font-bold">Descobrir</h1>
-            <p className="text-gray-400 text-sm">Os lançamentos mais quentes mapeados para você.</p>
+            <h1 className="text-3xl font-bold text-beatmap-text">Descobrir</h1>
+            <p className="text-beatmap-muted text-sm">Os lançamentos mais quentes mapeados para você.</p>
          </div>
          
          {/* Sub-navigation Tabs */}
-         <div className="flex bg-white/5 p-1 rounded-lg">
+         <div className="flex bg-beatmap-text/5 p-1 rounded-lg border border-beatmap-border/5">
              <button 
                 onClick={() => setFilters({...filters, contentType: 'albums'})}
-                className={`flex items-center gap-2 px-6 py-2 rounded-md text-sm font-medium transition-all ${filters.contentType === 'albums' ? 'bg-beatmap-primary text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                className={`flex items-center gap-2 px-6 py-2 rounded-md text-sm font-medium transition-all ${filters.contentType === 'albums' ? 'bg-beatmap-primary text-white shadow-lg' : 'text-beatmap-muted hover:text-beatmap-text'}`}
              >
                 <Disc size={16} /> Álbuns
              </button>
              <button 
                 onClick={() => setFilters({...filters, contentType: 'tracks'})}
-                className={`flex items-center gap-2 px-6 py-2 rounded-md text-sm font-medium transition-all ${filters.contentType === 'tracks' ? 'bg-beatmap-primary text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                className={`flex items-center gap-2 px-6 py-2 rounded-md text-sm font-medium transition-all ${filters.contentType === 'tracks' ? 'bg-beatmap-primary text-white shadow-lg' : 'text-beatmap-muted hover:text-beatmap-text'}`}
              >
                 <Mic2 size={16} /> Músicas
              </button>
@@ -355,7 +355,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
       </div>
 
       {/* 2. Controls & Filters Bar */}
-      <div className="bg-beatmap-card/50 backdrop-blur-md border border-white/5 rounded-2xl p-4 space-y-4">
+      <div className="bg-beatmap-card/50 backdrop-blur-md border border-beatmap-border/10 rounded-2xl p-4 space-y-4">
           
           {/* Top Row: Date & Search */}
           <div className="flex flex-col lg:flex-row gap-4 justify-between">
@@ -367,19 +367,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
                     placeholder={`Buscar ${filters.contentType === 'albums' ? 'álbuns' : 'músicas'} ou artistas...`}
                     value={filters.search}
                     onChange={(e) => setFilters({...filters, search: e.target.value})}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-beatmap-primary transition-all"
+                    className="w-full bg-beatmap-bg/60 border border-beatmap-border/10 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-beatmap-primary transition-all text-beatmap-text placeholder-beatmap-muted"
                 />
-                <Filter className="absolute left-3 top-2.5 text-gray-500 w-4 h-4" />
+                <Filter className="absolute left-3 top-2.5 text-beatmap-muted w-4 h-4" />
               </div>
 
               {/* Date Filters */}
               <div className="flex flex-wrap items-center gap-2">
-                  <div className="flex bg-black/40 rounded-lg p-1 border border-white/5">
+                  <div className="flex bg-beatmap-bg/60 rounded-lg p-1 border border-beatmap-border/10">
                       {(['day', 'week', 'month', 'custom'] as DateRangeType[]).map((range) => (
                           <button
                             key={range}
                             onClick={() => setFilters({...filters, dateRange: range})}
-                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${filters.dateRange === range ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${filters.dateRange === range ? 'bg-beatmap-text/10 text-beatmap-text' : 'text-beatmap-muted hover:text-beatmap-text'}`}
                           >
                               {range === 'day' && 'Hoje'}
                               {range === 'week' && '7 Dias'}
@@ -395,14 +395,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
                             type="date" 
                             value={filters.customStartDate}
                             onChange={(e) => setFilters({...filters, customStartDate: e.target.value})}
-                            className="bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-beatmap-primary"
+                            className="bg-beatmap-bg/60 border border-beatmap-border/10 rounded-lg px-2 py-1.5 text-xs text-beatmap-text focus:outline-none focus:border-beatmap-primary"
                           />
-                          <span className="text-gray-500">-</span>
+                          <span className="text-beatmap-muted">-</span>
                           <input 
                             type="date" 
                             value={filters.customEndDate}
                             onChange={(e) => setFilters({...filters, customEndDate: e.target.value})}
-                            className="bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-beatmap-primary"
+                            className="bg-beatmap-bg/60 border border-beatmap-border/10 rounded-lg px-2 py-1.5 text-xs text-beatmap-text focus:outline-none focus:border-beatmap-primary"
                           />
                       </div>
                   )}
@@ -410,11 +410,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
           </div>
 
           {/* Bottom Row: Genre & View Mode */}
-          <div className="flex items-center justify-between border-t border-white/5 pt-4">
+          <div className="flex items-center justify-between border-t border-beatmap-border/5 pt-4">
               <div className="flex items-center gap-3 overflow-x-auto pb-1 max-w-[80%] hide-scrollbar">
                   <button 
                     onClick={() => setFilters({...filters, genre: ''})}
-                    className={`whitespace-nowrap px-3 py-1 rounded-full text-xs font-medium border transition-colors ${filters.genre === '' ? 'bg-white text-black border-white' : 'bg-transparent text-gray-400 border-gray-700 hover:border-white'}`}
+                    className={`whitespace-nowrap px-3 py-1 rounded-full text-xs font-medium border transition-colors ${filters.genre === '' ? 'bg-beatmap-text text-beatmap-bg border-beatmap-text' : 'bg-transparent text-beatmap-muted border-beatmap-border/20 hover:border-beatmap-border'}`}
                   >
                       Todos
                   </button>
@@ -422,23 +422,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
                     <button 
                         key={g} 
                         onClick={() => setFilters({...filters, genre: g})}
-                        className={`whitespace-nowrap px-3 py-1 rounded-full text-xs font-medium border transition-colors ${filters.genre === g ? 'bg-white text-black border-white' : 'bg-transparent text-gray-400 border-gray-700 hover:border-white'}`}
+                        className={`whitespace-nowrap px-3 py-1 rounded-full text-xs font-medium border transition-colors ${filters.genre === g ? 'bg-beatmap-text text-beatmap-bg border-beatmap-text' : 'bg-transparent text-beatmap-muted border-beatmap-border/20 hover:border-beatmap-border'}`}
                     >
                         {g}
                     </button>
                   ))}
               </div>
 
-              <div className="flex items-center bg-black/40 rounded-lg p-1">
+              <div className="flex items-center bg-beatmap-bg/60 rounded-lg p-1">
                   <button 
                     onClick={() => setFilters({...filters, viewMode: 'grid'})}
-                    className={`p-1.5 rounded ${filters.viewMode === 'grid' ? 'bg-white/20 text-white' : 'text-gray-500 hover:text-white'}`}
+                    className={`p-1.5 rounded ${filters.viewMode === 'grid' ? 'bg-beatmap-text/20 text-beatmap-text' : 'text-beatmap-muted hover:text-beatmap-text'}`}
                   >
                       <Grid size={16} />
                   </button>
                   <button 
                     onClick={() => setFilters({...filters, viewMode: 'list'})}
-                    className={`p-1.5 rounded ${filters.viewMode === 'list' ? 'bg-white/20 text-white' : 'text-gray-500 hover:text-white'}`}
+                    className={`p-1.5 rounded ${filters.viewMode === 'list' ? 'bg-beatmap-text/20 text-beatmap-text' : 'text-beatmap-muted hover:text-beatmap-text'}`}
                   >
                       <ListIcon size={16} />
                   </button>
@@ -452,12 +452,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-beatmap-primary"></div>
            </div>
       ) : filteredItems.length === 0 ? (
-        <div className="text-center py-20 bg-beatmap-card/30 rounded-2xl border border-dashed border-white/10">
-            <AlertCircle className="mx-auto h-12 w-12 text-gray-600 mb-4" />
-            <p className="text-gray-400">Nenhum resultado encontrado para os filtros atuais.</p>
+        <div className="text-center py-20 bg-beatmap-card/30 rounded-2xl border border-dashed border-beatmap-border/10">
+            <AlertCircle className="mx-auto h-12 w-12 text-beatmap-muted mb-4" />
+            <p className="text-beatmap-muted">Nenhum resultado encontrado para os filtros atuais.</p>
             <button 
                 onClick={() => setFilters({...filters, search: '', dateRange: 'week', genre: '', customStartDate: '', customEndDate: ''})}
-                className="mt-4 text-beatmap-primary hover:text-white flex items-center gap-2 mx-auto text-sm"
+                className="mt-4 text-beatmap-primary hover:text-beatmap-text flex items-center gap-2 mx-auto text-sm"
             >
                 <RefreshCw size={14} /> Resetar filtros
             </button>
@@ -481,9 +481,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
                       <button 
                         onClick={() => loadData(true)} 
                         disabled={loadingMore}
-                        className="bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 px-6 py-2 rounded-full text-sm font-medium transition-all disabled:opacity-50 flex items-center gap-2"
+                        className="bg-beatmap-card border border-beatmap-border/10 text-beatmap-text px-6 py-2 rounded-full text-sm font-medium transition-all disabled:opacity-50 flex items-center gap-2 hover:bg-beatmap-text/10"
                       >
-                          {loadingMore && <div className="animate-spin h-3 w-3 border-t-2 border-white rounded-full"></div>}
+                          {loadingMore && <div className="animate-spin h-3 w-3 border-t-2 border-beatmap-text rounded-full"></div>}
                           {loadingMore ? 'Carregando...' : 'Carregar Mais'}
                       </button>
                   </div>
@@ -493,18 +493,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
 
       {/* 4. Floating Action Bar */}
       {selectedItems.length > 0 && (
-        <div className="fixed bottom-20 md:bottom-8 left-1/2 -translate-x-1/2 bg-beatmap-card border border-white/10 shadow-2xl rounded-full px-6 py-3 flex items-center gap-6 z-50 animate-in slide-in-from-bottom-10 fade-in duration-300">
+        <div className="fixed bottom-20 md:bottom-8 left-1/2 -translate-x-1/2 bg-beatmap-card border border-beatmap-border/20 shadow-2xl rounded-full px-6 py-3 flex items-center gap-6 z-50 animate-in slide-in-from-bottom-10 fade-in duration-300">
           <div className="flex flex-col md:flex-row items-center gap-1 md:gap-2">
-            <span className="text-sm font-medium">
+            <span className="text-sm font-medium text-beatmap-text">
                 <span className="text-beatmap-primary font-bold">{selectedItems.length}</span> {filters.contentType === 'albums' ? 'álbuns' : 'faixas'}
             </span>
-            <span className="text-[10px] text-gray-400 hidden md:inline">selecionados</span>
+            <span className="text-[10px] text-beatmap-muted hidden md:inline">selecionados</span>
           </div>
-          <div className="h-6 w-px bg-white/20"></div>
+          <div className="h-6 w-px bg-beatmap-border/20"></div>
           <button 
             onClick={handleCreatePlaylist}
             disabled={isCreating}
-            className="flex items-center gap-2 bg-white text-black px-5 py-2 rounded-full text-sm font-bold hover:bg-gray-200 transition-colors disabled:opacity-50 transform hover:scale-105"
+            className="flex items-center gap-2 bg-beatmap-text text-beatmap-bg px-5 py-2 rounded-full text-sm font-bold hover:opacity-90 transition-colors disabled:opacity-50 transform hover:scale-105"
           >
             {isCreating ? <RefreshCw className="animate-spin" size={16}/> : <Plus size={16} />}
             {isCreating ? 'Criando...' : 'Criar Playlist'}

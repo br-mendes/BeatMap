@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { supabase, spotifyConfig } from './lib/supabase';
 import { fetchUserProfile } from './lib/spotify';
 import { getUserHistory, deletePlaylist } from './lib/db';
+import { getSavedTheme, applyTheme } from './lib/theme';
 import { User, HistoryItem } from './types';
 import { Layout } from './components/Layout';
 import { Login } from './pages/Login';
@@ -20,6 +21,12 @@ function App() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isDemo, setIsDemo] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+
+  // Apply theme as early as possible
+  useLayoutEffect(() => {
+    const savedTheme = getSavedTheme();
+    applyTheme(savedTheme);
+  }, []);
 
   // Check for OAuth errors in URL on mount
   useEffect(() => {
@@ -216,13 +223,13 @@ function App() {
 
       {activeTab === 'playlists' && (
         <div className="flex flex-col items-center justify-center h-[60vh] text-center space-y-4">
-            <div className="bg-white/5 p-6 rounded-full">
+            <div className="bg-beatmap-card/30 p-6 rounded-full">
                 <svg className="w-12 h-12 text-beatmap-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
             </div>
             <h2 className="text-2xl font-bold">Minhas Playlists</h2>
-            <p className="text-gray-400 max-w-md">
+            <p className="text-beatmap-muted max-w-md">
                 Gerencie suas playlists importadas e sincronize com sua biblioteca. Esta funcionalidade estará disponível na versão Pro.
             </p>
         </div>

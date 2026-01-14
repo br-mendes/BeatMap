@@ -99,7 +99,7 @@ export const Discovery: React.FC<DiscoveryProps> = ({ token, userId, supabaseUse
     return (
         <div className="space-y-8 pb-24">
             {/* Hero Section */}
-            <div className="relative bg-gradient-to-br from-indigo-900 to-beatmap-dark rounded-3xl p-8 border border-white/10 overflow-hidden">
+            <div className="relative bg-gradient-to-br from-indigo-900 to-beatmap-dark rounded-3xl p-8 border border-beatmap-border/10 overflow-hidden">
                 <div className="absolute top-0 right-0 p-12 opacity-10">
                     <Sparkles size={200} />
                 </div>
@@ -142,14 +142,14 @@ export const Discovery: React.FC<DiscoveryProps> = ({ token, userId, supabaseUse
             </div>
 
             {/* Track List */}
-            <div className="bg-beatmap-card/50 rounded-2xl border border-white/5 overflow-hidden">
-                <div className="p-4 border-b border-white/5 text-sm font-bold text-gray-400">
+            <div className="bg-beatmap-card/50 rounded-2xl border border-beatmap-border/10 overflow-hidden">
+                <div className="p-4 border-b border-beatmap-border/10 text-sm font-bold text-beatmap-muted">
                     Músicas Recomendadas ({discovery.tracks.length})
                 </div>
-                <div className="divide-y divide-white/5">
+                <div className="divide-y divide-beatmap-border/10">
                     {discovery.tracks.map((track, idx) => (
-                        <div key={track.id} className="group p-3 flex items-center gap-4 hover:bg-white/5 transition-colors">
-                            <div className="w-8 text-center text-gray-500 font-mono text-sm">{idx + 1}</div>
+                        <div key={track.id} className="group p-3 flex items-center gap-4 hover:bg-beatmap-text/5 transition-colors">
+                            <div className="w-8 text-center text-beatmap-muted font-mono text-sm">{idx + 1}</div>
                             
                             <div className="relative w-12 h-12 shrink-0 rounded overflow-hidden">
                                 <img src={track.album?.images[0]?.url} alt={track.name} className="w-full h-full object-cover" />
@@ -158,14 +158,14 @@ export const Discovery: React.FC<DiscoveryProps> = ({ token, userId, supabaseUse
                                         onClick={() => togglePreview(track.preview_url)}
                                         className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                                     >
-                                        {playingPreview === track.preview_url ? <Pause size={18} /> : <Play size={18} />}
+                                        {playingPreview === track.preview_url ? <Pause size={18} className="text-white" /> : <Play size={18} className="text-white" />}
                                     </button>
                                 )}
                             </div>
 
                             <div className="flex-1 min-w-0">
-                                <div className="font-bold text-white truncate">{track.name}</div>
-                                <div className="text-sm text-gray-400 truncate">{track.artists.map(a => a.name).join(', ')}</div>
+                                <div className="font-bold text-beatmap-text truncate">{track.name}</div>
+                                <div className="text-sm text-beatmap-muted truncate">{track.artists.map(a => a.name).join(', ')}</div>
                                 <div className="text-xs text-beatmap-primary/80 mt-1 truncate flex items-center gap-1">
                                     <Sparkles size={10} /> {track.reason}
                                 </div>
@@ -174,19 +174,19 @@ export const Discovery: React.FC<DiscoveryProps> = ({ token, userId, supabaseUse
                             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button 
                                     onClick={() => handleFeedback(track.id, 'like')}
-                                    className={`p-2 rounded-full transition-colors ${track.feedback === 'like' ? 'bg-green-500/20 text-green-500' : 'hover:bg-white/10 text-gray-400'}`}
+                                    className={`p-2 rounded-full transition-colors ${track.feedback === 'like' ? 'bg-green-500/20 text-green-500' : 'hover:bg-beatmap-text/10 text-beatmap-muted'}`}
                                 >
                                     <ThumbsUp size={16} />
                                 </button>
                                 <button 
                                     onClick={() => handleFeedback(track.id, 'dislike')}
-                                    className={`p-2 rounded-full transition-colors ${track.feedback === 'dislike' ? 'bg-red-500/20 text-red-500' : 'hover:bg-white/10 text-gray-400'}`}
+                                    className={`p-2 rounded-full transition-colors ${track.feedback === 'dislike' ? 'bg-red-500/20 text-red-500' : 'hover:bg-beatmap-text/10 text-beatmap-muted'}`}
                                 >
                                     <ThumbsDown size={16} />
                                 </button>
                             </div>
 
-                            <div className="text-sm text-gray-500 font-mono w-16 text-right">
+                            <div className="text-sm text-beatmap-muted font-mono w-16 text-right">
                                 {Math.floor(track.duration_ms / 60000)}:{((track.duration_ms % 60000) / 1000).toFixed(0).padStart(2, '0')}
                             </div>
                         </div>

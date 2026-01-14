@@ -111,50 +111,50 @@ export const Stats: React.FC<StatsProps> = ({ token, supabaseUserId }) => {
 
   return (
     <div className="space-y-8 pb-20">
-       <div className="bg-gradient-to-r from-beatmap-primary/20 to-transparent p-8 rounded-3xl border border-white/5">
-        <h1 className="text-3xl font-bold mb-2">Suas Estatísticas</h1>
-        <p className="text-gray-300">Análise profunda do seu gosto musical e uso do BeatMap.</p>
+       <div className="bg-gradient-to-r from-beatmap-primary/20 to-transparent p-8 rounded-3xl border border-beatmap-border/10">
+        <h1 className="text-3xl font-bold mb-2 text-beatmap-text">Suas Estatísticas</h1>
+        <p className="text-beatmap-muted">Análise profunda do seu gosto musical e uso do BeatMap.</p>
       </div>
 
       {/* 1. Scorecards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-beatmap-card p-6 rounded-2xl border border-white/5 relative overflow-hidden group hover:border-beatmap-primary/50 transition-colors">
+          <div className="bg-beatmap-card p-6 rounded-2xl border border-beatmap-border/10 relative overflow-hidden group hover:border-beatmap-primary/50 transition-colors">
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                   <Disc size={64} />
               </div>
-              <p className="text-gray-400 text-sm mb-1">Playlists Criadas</p>
-              <h3 className="text-3xl font-bold">{stats?.totalPlaylists || 0}</h3>
+              <p className="text-beatmap-muted text-sm mb-1">Playlists Criadas</p>
+              <h3 className="text-3xl font-bold text-beatmap-text">{stats?.totalPlaylists || 0}</h3>
           </div>
-          <div className="bg-beatmap-card p-6 rounded-2xl border border-white/5 relative overflow-hidden group hover:border-beatmap-secondary/50 transition-colors">
+          <div className="bg-beatmap-card p-6 rounded-2xl border border-beatmap-border/10 relative overflow-hidden group hover:border-beatmap-secondary/50 transition-colors">
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                   <Music2 size={64} />
               </div>
-              <p className="text-gray-400 text-sm mb-1">Músicas Salvas</p>
-              <h3 className="text-3xl font-bold">{stats?.totalTracksSaved || 0}</h3>
+              <p className="text-beatmap-muted text-sm mb-1">Músicas Salvas</p>
+              <h3 className="text-3xl font-bold text-beatmap-text">{stats?.totalTracksSaved || 0}</h3>
           </div>
-          <div className="bg-beatmap-card p-6 rounded-2xl border border-white/5 relative overflow-hidden group hover:border-beatmap-accent/50 transition-colors">
+          <div className="bg-beatmap-card p-6 rounded-2xl border border-beatmap-border/10 relative overflow-hidden group hover:border-beatmap-accent/50 transition-colors">
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                   <Clock size={64} />
               </div>
-              <p className="text-gray-400 text-sm mb-1">Tempo Mapeado</p>
-              <h3 className="text-3xl font-bold">{formatTime(stats?.totalTimeMs || 0)}</h3>
+              <p className="text-beatmap-muted text-sm mb-1">Tempo Mapeado</p>
+              <h3 className="text-3xl font-bold text-beatmap-text">{formatTime(stats?.totalTimeMs || 0)}</h3>
           </div>
-          <div className="bg-beatmap-card p-6 rounded-2xl border border-white/5 relative overflow-hidden group hover:border-purple-500/50 transition-colors">
+          <div className="bg-beatmap-card p-6 rounded-2xl border border-beatmap-border/10 relative overflow-hidden group hover:border-purple-500/50 transition-colors">
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                   <UserCheck size={64} />
               </div>
-              <p className="text-gray-400 text-sm mb-1">Artistas Únicos</p>
-              <h3 className="text-3xl font-bold">{stats?.uniqueArtists || 0}</h3>
+              <p className="text-beatmap-muted text-sm mb-1">Artistas Únicos</p>
+              <h3 className="text-3xl font-bold text-beatmap-text">{stats?.uniqueArtists || 0}</h3>
           </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           
           {/* 2. Monthly Activity Chart */}
-          <div className="bg-beatmap-card p-6 rounded-2xl border border-white/5">
+          <div className="bg-beatmap-card p-6 rounded-2xl border border-beatmap-border/10">
               <div className="flex items-center gap-2 mb-6">
                   <Activity className="text-beatmap-primary" size={20} />
-                  <h3 className="font-bold text-lg">Evolução de Descobertas</h3>
+                  <h3 className="font-bold text-lg text-beatmap-text">Evolução de Descobertas</h3>
               </div>
               <div className="h-[300px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
@@ -163,8 +163,8 @@ export const Stats: React.FC<StatsProps> = ({ token, supabaseUserId }) => {
                           <XAxis dataKey="month" stroke="#666" fontSize={12} tickLine={false} axisLine={false} />
                           <YAxis stroke="#666" fontSize={12} tickLine={false} axisLine={false} />
                           <Tooltip 
-                            contentStyle={{ backgroundColor: '#181818', borderColor: '#333', borderRadius: '8px' }}
-                            itemStyle={{ color: '#fff' }}
+                            contentStyle={{ backgroundColor: 'rgb(var(--color-card))', borderColor: 'rgb(var(--color-border))', borderRadius: '8px', color: 'rgb(var(--color-text))' }}
+                            itemStyle={{ color: 'rgb(var(--color-text))' }}
                             cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                           />
                           <Legend wrapperStyle={{ paddingTop: '20px' }} />
@@ -176,10 +176,10 @@ export const Stats: React.FC<StatsProps> = ({ token, supabaseUserId }) => {
           </div>
 
           {/* 3. Top Genres Chart */}
-          <div className="bg-beatmap-card p-6 rounded-2xl border border-white/5">
+          <div className="bg-beatmap-card p-6 rounded-2xl border border-beatmap-border/10">
               <div className="flex items-center gap-2 mb-6">
                   <TrendingUp className="text-beatmap-secondary" size={20} />
-                  <h3 className="font-bold text-lg">Gêneros Mapeados</h3>
+                  <h3 className="font-bold text-lg text-beatmap-text">Gêneros Mapeados</h3>
               </div>
               <div className="flex flex-col md:flex-row items-center justify-center h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
@@ -198,8 +198,8 @@ export const Stats: React.FC<StatsProps> = ({ token, supabaseUserId }) => {
                               ))}
                           </Pie>
                           <Tooltip 
-                             contentStyle={{ backgroundColor: '#181818', borderColor: '#333', borderRadius: '8px' }}
-                             itemStyle={{ color: '#fff' }}
+                             contentStyle={{ backgroundColor: 'rgb(var(--color-card))', borderColor: 'rgb(var(--color-border))', borderRadius: '8px', color: 'rgb(var(--color-text))' }}
+                             itemStyle={{ color: 'rgb(var(--color-text))' }}
                           />
                           <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '12px' }}/>
                       </PieChart>
@@ -210,42 +210,42 @@ export const Stats: React.FC<StatsProps> = ({ token, supabaseUserId }) => {
       </div>
 
       {/* 4. Top Artists Rank */}
-      <div className="bg-beatmap-card rounded-2xl border border-white/5 overflow-hidden">
-          <div className="p-6 border-b border-white/5 flex items-center justify-between">
-              <h3 className="font-bold text-lg flex items-center gap-2">
+      <div className="bg-beatmap-card rounded-2xl border border-beatmap-border/10 overflow-hidden">
+          <div className="p-6 border-b border-beatmap-border/10 flex items-center justify-between">
+              <h3 className="font-bold text-lg flex items-center gap-2 text-beatmap-text">
                   <UserCheck className="text-beatmap-accent" size={20} />
                   Seus Artistas Favoritos (Spotify)
               </h3>
-              <span className="text-xs text-gray-400">Ative o sino para receber notificações de lançamentos</span>
+              <span className="text-xs text-beatmap-muted">Ative o sino para receber notificações de lançamentos</span>
           </div>
-          <div className="divide-y divide-white/5">
+          <div className="divide-y divide-beatmap-border/10">
               {topArtists.map((artist, index) => {
                   const isFollowing = followedArtistIds.includes(artist.id);
                   return (
-                  <div key={artist.id} className="p-4 flex items-center gap-4 hover:bg-white/5 transition-colors group">
-                      <div className="text-2xl font-bold text-gray-600 w-8 text-center group-hover:text-beatmap-primary transition-colors">
+                  <div key={artist.id} className="p-4 flex items-center gap-4 hover:bg-beatmap-text/5 transition-colors group">
+                      <div className="text-2xl font-bold text-beatmap-muted w-8 text-center group-hover:text-beatmap-primary transition-colors">
                           #{index + 1}
                       </div>
-                      <img src={artist.image} alt={artist.name} className="w-12 h-12 rounded-full object-cover border border-white/10" />
+                      <img src={artist.image} alt={artist.name} className="w-12 h-12 rounded-full object-cover border border-beatmap-border/10" />
                       <div className="flex-1">
-                          <h4 className="font-bold">{artist.name}</h4>
-                          <div className="flex gap-2 text-xs text-gray-400 mt-1">
+                          <h4 className="font-bold text-beatmap-text">{artist.name}</h4>
+                          <div className="flex gap-2 text-xs text-beatmap-muted mt-1">
                               {artist.genres.slice(0, 3).map(g => (
-                                  <span key={g} className="bg-white/5 px-2 py-0.5 rounded-full">{g}</span>
+                                  <span key={g} className="bg-beatmap-text/5 px-2 py-0.5 rounded-full">{g}</span>
                               ))}
                           </div>
                       </div>
                       <div className="flex items-center gap-4">
                           <button 
                              onClick={() => handleFollow(artist)}
-                             className={`p-2 rounded-full transition-all ${isFollowing ? 'bg-beatmap-secondary text-white' : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'}`}
+                             className={`p-2 rounded-full transition-all ${isFollowing ? 'bg-beatmap-secondary text-white' : 'bg-beatmap-text/5 text-beatmap-muted hover:text-beatmap-text hover:bg-beatmap-text/10'}`}
                              title={isFollowing ? 'Parar de seguir notificações' : 'Receber notificações de lançamentos'}
                           >
                               {isFollowing ? <Bell size={18} fill="currentColor" /> : <BellOff size={18} />}
                           </button>
                           
                           <div className="text-right hidden sm:block">
-                              <div className="text-xs text-gray-400">Popularidade</div>
+                              <div className="text-xs text-beatmap-muted">Popularidade</div>
                               <div className="font-mono text-beatmap-accent">{artist.popularity}%</div>
                           </div>
                           
@@ -253,7 +253,7 @@ export const Stats: React.FC<StatsProps> = ({ token, supabaseUserId }) => {
                             href={artist.external_url} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="bg-white/10 hover:bg-white text-white hover:text-black px-4 py-1.5 rounded-full text-xs font-bold transition-all"
+                            className="bg-beatmap-text/10 hover:bg-beatmap-text text-beatmap-text hover:text-beatmap-bg px-4 py-1.5 rounded-full text-xs font-bold transition-all"
                           >
                               Ver
                           </a>

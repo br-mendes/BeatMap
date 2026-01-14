@@ -167,3 +167,22 @@ export interface WeeklyDiscovery {
   generatedAt: string;
   savedToLibrary: boolean;
 }
+
+// Theme Types
+export interface ThemeColors {
+  bg: string;
+  card: string;
+  primary: string;
+  secondary: string;
+  accent: string;
+  text: string;
+  muted: string;
+  border: string;
+}
+
+export interface Theme {
+  id: string;
+  name: string;
+  colors: ThemeColors;
+  isCustom?: boolean;
+}

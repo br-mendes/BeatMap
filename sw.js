@@ -1,9 +1,8 @@
-const CACHE_NAME = 'beatmap-v2.0.0';
-const STATIC_CACHE = 'beatmap-static-v2.0.0';
-const API_CACHE = 'beatmap-api-v2.0.0';
+const CACHE_NAME = 'beatmap-v3.0.0';
+const STATIC_CACHE = 'beatmap-static-v3.0.0';
+const API_CACHE = 'beatmap-api-v3.0.0';
 
 // Assets estáticos para cache
-// Usando URLs do Unsplash para garantir funcionamento sem arquivos locais
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -21,10 +20,10 @@ self.addEventListener('install', (event) => {
       return cache.addAll(STATIC_ASSETS);
     })
   );
-  self.skipWaiting();
+  // NOT calling skipWaiting() here to allow user to control update
 });
 
-// Ativar service worker
+// Ativar service worker e limpar caches antigos
 self.addEventListener('activate', (event) => {
   console.log('[Service Worker] Ativando...');
   event.waitUntil(
@@ -42,16 +41,25 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// Listener para mensagem de atualização manual
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 // Estratégia de cache
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // API do Spotify - Network First
+  // 1. API do Spotify: Network First (Dados Dinâmicos)
+  // Tenta rede primeiro, salva no cache, fallback para cache se offline
   if (url.hostname === 'api.spotify.com') {
     event.respondWith(
       fetch(request)
         .then((response) => {
+          // Clona a resposta pois ela só pode ser consumida uma vez
           const clonedResponse = response.clone();
           caches.open(API_CACHE).then((cache) => {
             cache.put(request, clonedResponse);
@@ -59,6 +67,7 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => {
+          // Fallback para cache se rede falhar
           return caches.match(request).then((cachedResponse) => {
             if (cachedResponse) {
               return cachedResponse;
@@ -73,71 +82,47 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Assets estáticos - Cache First
-  if (STATIC_ASSETS.includes(url.pathname) || STATIC_ASSETS.includes(request.url)) {
+  // 2. Assets Estáticos: Cache First
+  // Tenta cache primeiro, fallback para rede
+  if (STATIC_ASSETS.includes(url.pathname) || STATIC_ASSETS.includes(request.url) || request.destination === 'image' || request.destination === 'style' || request.destination === 'script') {
     event.respondWith(
       caches.match(request).then((cachedResponse) => {
-        return cachedResponse || fetch(request);
+        if (cachedResponse) {
+           return cachedResponse;
+        }
+        return fetch(request).then(response => {
+           if(!response || response.status !== 200 || response.type !== 'basic') {
+              return response;
+           }
+           const responseToCache = response.clone();
+           caches.open(STATIC_CACHE).then(cache => {
+              cache.put(request, responseToCache);
+           });
+           return response;
+        });
       })
     );
     return;
   }
 
-  // Outros recursos - Network First com fallback
+  // 3. Navegação (HTML): Network First (com fallback para index.html/root)
+  if (request.mode === 'navigate') {
+     event.respondWith(
+        fetch(request).catch(() => {
+           return caches.match('/');
+        })
+     );
+     return;
+  }
+
+  // 4. Default: Network First
   event.respondWith(
     fetch(request)
       .then((response) => {
-        if (response.status === 200) {
-          const clonedResponse = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, clonedResponse);
-          });
-        }
         return response;
       })
       .catch(() => {
         return caches.match(request);
       })
   );
-});
-
-// Sincronização em background
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-playlists') {
-    event.waitUntil(syncPlaylists());
-  }
-});
-
-async function syncPlaylists() {
-  console.log('[Service Worker] Sincronizando playlists...');
-  // Implementar lógica de sincronização futura
-}
-
-// Notificações push
-self.addEventListener('push', (event) => {
-  if (event.data) {
-    const data = event.data.json();
-    const options = {
-      body: data.body,
-      icon: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=192&h=192&fit=crop',
-      badge: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=72&h=72&fit=crop',
-      vibrate: [200, 100, 200],
-      data: {
-        url: data.url
-      }
-    };
-    event.waitUntil(
-      self.registration.showNotification(data.title, options)
-    );
-  }
-});
-
-// Clique em notificação
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  if (event.notification.data && event.notification.data.url) {
-    event.waitUntil(
-      clients.openWindow(event.notification.data.url)
-    );
-  }
 });
