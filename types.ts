@@ -186,3 +186,16 @@ export interface Theme {
   colors: ThemeColors;
   isCustom?: boolean;
 }
+
+// Layout Types
+export type LayoutMode = 'grid-compact' | 'grid-normal' | 'list' | 'cards';
+export type AppFontSize = 'small' | 'normal' | 'large';
+export type AppDensity = 'compact' | 'normal' | 'expanded';
+export type SidebarPosition = 'left' | 'right' | 'hidden';
+
+export interface LayoutSettings {
+  mode: LayoutMode;
+  fontSize: AppFontSize;
+  density: AppDensity;
+  sidebarPosition: SidebarPosition;
+}

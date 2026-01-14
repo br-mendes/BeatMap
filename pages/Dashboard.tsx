@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
     Filter, Calendar, Music, Plus, ExternalLink, Check, RefreshCw, 
-    Disc, Mic2, Grid, List as ListIcon, Play, Pause, AlertCircle 
+    Disc, Mic2, Grid, List as ListIcon, Play, Pause, AlertCircle, LayoutGrid, Smartphone, Maximize2 
 } from 'lucide-react';
 import { Album, FilterState, Track, DateRangeType } from '../types';
 import { 
@@ -9,6 +9,7 @@ import {
     searchByGenre, searchNewTracks, isDateInInterval 
 } from '../lib/spotify';
 import { savePlaylistToDb } from '../lib/db';
+import { useLayout } from '../contexts/LayoutContext';
 
 interface DashboardProps {
   token: string | null;
@@ -22,6 +23,8 @@ const COMMON_GENRES = [
 ];
 
 export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUserId, onPlaylistCreated }) => {
+  const { settings, updateSettings } = useLayout();
+  
   // --- STATE ---
   const [albums, setAlbums] = useState<Album[]>([]);
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -36,7 +39,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
     customEndDate: '',
     genre: '',
     contentType: 'albums', // 'albums' or 'tracks'
-    viewMode: 'grid'       // 'grid' or 'list'
+    viewMode: 'grid' // kept for type compatibility, but effectively controlled by context
   });
 
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -165,12 +168,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
           });
       } else {
           // Tracks are already selected, just get URIs
-          // For DB saving we need structure, so we mock "Albums" from tracks or just save playlist info
           const selectedTracks = tracks.filter(t => selectedItems.includes(t.id));
           selectedTracks.forEach(t => trackUris.push(t.uri));
-          
-          // Construct pseudo-albums for DB structure compatibility
-          // In a real app, DB schema might be more flexible
           sourceAlbums = selectedTracks.map(t => t.album as Album).filter(Boolean);
       }
 
@@ -217,7 +216,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
       }
   };
 
-  // --- RENDER HELPERS ---
+  // --- VIEW RENDERING HELPERS ---
+
+  // Determine container classes based on mode
+  const getGridClasses = () => {
+      switch (settings.mode) {
+          case 'grid-compact': return 'grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3';
+          case 'grid-normal': return 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6';
+          case 'cards': return 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8';
+          case 'list': return 'flex flex-col gap-2';
+          default: return 'grid grid-cols-2 md:grid-cols-4 gap-6';
+      }
+  };
 
   const renderCard = (item: Album | Track) => {
     const isSelected = selectedItems.includes(item.id);
@@ -230,14 +240,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
         : (item as Track).album?.release_date;
 
     const previewUrl = filters.contentType === 'tracks' ? (item as Track).preview_url : null;
+    
+    const isCompact = settings.mode === 'grid-compact';
+    const isLarge = settings.mode === 'cards';
 
     return (
       <div 
         key={item.id} 
         onClick={() => toggleSelection(item.id)}
-        className={`group relative bg-beatmap-card rounded-xl p-4 transition-all duration-300 hover:bg-beatmap-text/5 cursor-pointer border ${isSelected ? 'border-beatmap-primary shadow-[0_0_15px_rgba(139,92,246,0.3)]' : 'border-transparent hover:border-beatmap-border/10'}`}
+        className={`group relative bg-beatmap-card rounded-xl transition-all duration-300 hover:bg-beatmap-text/5 cursor-pointer border 
+            ${isSelected ? 'border-beatmap-primary shadow-[0_0_15px_rgba(139,92,246,0.3)]' : 'border-transparent hover:border-beatmap-border/10'}
+            ${settings.density === 'compact' ? 'p-2' : isLarge ? 'p-6' : 'p-4'}
+        `}
       >
-        <div className="relative aspect-square mb-4 rounded-lg overflow-hidden shadow-lg bg-black/40">
+        <div className={`relative aspect-square rounded-lg overflow-hidden shadow-lg bg-black/40 ${isCompact ? 'mb-2' : 'mb-4'}`}>
           {image && <img src={image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>}
           
           {/* Action Overlay */}
@@ -256,28 +272,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
                   {playingPreview === previewUrl ? <Pause size={14} /> : <Play size={14} />}
               </button>
           )}
-
-           {filters.contentType === 'tracks' && !previewUrl && (
-              <div className="absolute bottom-2 right-2 p-1.5 rounded bg-black/60 text-gray-400 backdrop-blur-md" title="Sem preview">
-                  <Music size={12} />
-              </div>
-          )}
         </div>
 
-        <h3 className="font-semibold text-beatmap-text truncate mb-1 text-sm" title={item.name}>{item.name}</h3>
-        <p className="text-xs text-beatmap-muted truncate">{item.artists?.map(a => a.name).join(', ')}</p>
+        <h3 className={`font-semibold text-beatmap-text truncate ${isCompact ? 'text-xs' : isLarge ? 'text-xl' : 'text-sm'}`} title={item.name}>{item.name}</h3>
+        <p className={`text-beatmap-muted truncate ${isCompact ? 'text-[10px]' : 'text-xs'}`}>{item.artists?.map(a => a.name).join(', ')}</p>
         
-        <div className="mt-3 flex items-center justify-between text-[10px] text-beatmap-muted/80">
-          <span className="flex items-center gap-1">
-            <Calendar size={10} />
-            {releaseDate ? new Date(releaseDate).toLocaleDateString('pt-BR') : 'N/A'}
-          </span>
-          {filters.contentType === 'albums' && (
-              <span className="bg-beatmap-text/10 px-1.5 py-0.5 rounded text-[9px] uppercase">
-                {(item as Album).album_type}
-              </span>
-          )}
-        </div>
+        {!isCompact && (
+            <div className="mt-3 flex items-center justify-between text-[10px] text-beatmap-muted/80">
+            <span className="flex items-center gap-1">
+                <Calendar size={10} />
+                {releaseDate ? new Date(releaseDate).toLocaleDateString('pt-BR') : 'N/A'}
+            </span>
+            {filters.contentType === 'albums' && (
+                <span className="bg-beatmap-text/10 px-1.5 py-0.5 rounded text-[9px] uppercase">
+                    {(item as Album).album_type}
+                </span>
+            )}
+            </div>
+        )}
       </div>
     );
   };
@@ -291,12 +303,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
         ? (item as Album).release_date 
         : (item as Track).album?.release_date;
       const previewUrl = filters.contentType === 'tracks' ? (item as Track).preview_url : null;
+      
+      const paddingClass = settings.density === 'compact' ? 'p-2' : settings.density === 'expanded' ? 'p-4' : 'p-3';
 
       return (
         <div 
             key={item.id}
             onClick={() => toggleSelection(item.id)}
-            className={`flex items-center gap-4 p-3 rounded-lg cursor-pointer transition-colors border-l-4 ${isSelected ? 'bg-beatmap-text/10 border-beatmap-primary' : 'hover:bg-beatmap-text/5 border-transparent'}`}
+            className={`flex items-center gap-4 ${paddingClass} rounded-lg cursor-pointer transition-colors border-l-4 ${isSelected ? 'bg-beatmap-text/10 border-beatmap-primary' : 'hover:bg-beatmap-text/5 border-transparent'}`}
         >
             <div className="relative w-12 h-12 flex-shrink-0">
                 {image && <img src={image} className="w-full h-full rounded object-cover" alt="" />}
@@ -326,8 +340,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
       )
   };
 
-  // --- RENDER MAIN ---
-
   return (
     <div className="space-y-6 pb-24">
       {/* 1. Header & Tabs */}
@@ -337,7 +349,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
             <p className="text-beatmap-muted text-sm">Os lançamentos mais quentes mapeados para você.</p>
          </div>
          
-         {/* Sub-navigation Tabs */}
          <div className="flex bg-beatmap-text/5 p-1 rounded-lg border border-beatmap-border/5">
              <button 
                 onClick={() => setFilters({...filters, contentType: 'albums'})}
@@ -357,10 +368,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
       {/* 2. Controls & Filters Bar */}
       <div className="bg-beatmap-card/50 backdrop-blur-md border border-beatmap-border/10 rounded-2xl p-4 space-y-4">
           
-          {/* Top Row: Date & Search */}
           <div className="flex flex-col lg:flex-row gap-4 justify-between">
-              
-              {/* Search */}
               <div className="relative flex-1 min-w-[200px]">
                 <input 
                     type="text" 
@@ -372,7 +380,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
                 <Filter className="absolute left-3 top-2.5 text-beatmap-muted w-4 h-4" />
               </div>
 
-              {/* Date Filters */}
               <div className="flex flex-wrap items-center gap-2">
                   <div className="flex bg-beatmap-bg/60 rounded-lg p-1 border border-beatmap-border/10">
                       {(['day', 'week', 'month', 'custom'] as DateRangeType[]).map((range) => (
@@ -409,9 +416,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
               </div>
           </div>
 
-          {/* Bottom Row: Genre & View Mode */}
           <div className="flex items-center justify-between border-t border-beatmap-border/5 pt-4">
-              <div className="flex items-center gap-3 overflow-x-auto pb-1 max-w-[80%] hide-scrollbar">
+              <div className="flex items-center gap-3 overflow-x-auto pb-1 max-w-[60%] hide-scrollbar">
                   <button 
                     onClick={() => setFilters({...filters, genre: ''})}
                     className={`whitespace-nowrap px-3 py-1 rounded-full text-xs font-medium border transition-colors ${filters.genre === '' ? 'bg-beatmap-text text-beatmap-bg border-beatmap-text' : 'bg-transparent text-beatmap-muted border-beatmap-border/20 hover:border-beatmap-border'}`}
@@ -429,16 +435,33 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
                   ))}
               </div>
 
-              <div className="flex items-center bg-beatmap-bg/60 rounded-lg p-1">
+              {/* Advanced View Controls */}
+              <div className="flex items-center bg-beatmap-bg/60 rounded-lg p-1 gap-1">
                   <button 
-                    onClick={() => setFilters({...filters, viewMode: 'grid'})}
-                    className={`p-1.5 rounded ${filters.viewMode === 'grid' ? 'bg-beatmap-text/20 text-beatmap-text' : 'text-beatmap-muted hover:text-beatmap-text'}`}
+                    onClick={() => updateSettings({ mode: 'grid-compact' })}
+                    title="Grid Compacto"
+                    className={`p-1.5 rounded ${settings.mode === 'grid-compact' ? 'bg-beatmap-text/20 text-beatmap-text' : 'text-beatmap-muted hover:text-beatmap-text'}`}
                   >
-                      <Grid size={16} />
+                      <Smartphone size={16} />
                   </button>
                   <button 
-                    onClick={() => setFilters({...filters, viewMode: 'list'})}
-                    className={`p-1.5 rounded ${filters.viewMode === 'list' ? 'bg-beatmap-text/20 text-beatmap-text' : 'text-beatmap-muted hover:text-beatmap-text'}`}
+                    onClick={() => updateSettings({ mode: 'grid-normal' })}
+                    title="Grid Normal"
+                    className={`p-1.5 rounded ${settings.mode === 'grid-normal' ? 'bg-beatmap-text/20 text-beatmap-text' : 'text-beatmap-muted hover:text-beatmap-text'}`}
+                  >
+                      <LayoutGrid size={16} />
+                  </button>
+                   <button 
+                    onClick={() => updateSettings({ mode: 'cards' })}
+                    title="Cards Expandidos"
+                    className={`p-1.5 rounded ${settings.mode === 'cards' ? 'bg-beatmap-text/20 text-beatmap-text' : 'text-beatmap-muted hover:text-beatmap-text'}`}
+                  >
+                      <Maximize2 size={16} />
+                  </button>
+                  <button 
+                    onClick={() => updateSettings({ mode: 'list' })}
+                    title="Lista"
+                    className={`p-1.5 rounded ${settings.mode === 'list' ? 'bg-beatmap-text/20 text-beatmap-text' : 'text-beatmap-muted hover:text-beatmap-text'}`}
                   >
                       <ListIcon size={16} />
                   </button>
@@ -464,18 +487,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
         </div>
       ) : (
           <div className="space-y-8">
-              {filters.viewMode === 'grid' ? (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                      {filteredItems.map(item => renderCard(item))}
-                  </div>
-              ) : (
-                  <div className="flex flex-col gap-2">
-                      {filteredItems.map(item => renderListItem(item))}
-                  </div>
-              )}
+              <div className={getGridClasses()}>
+                  {settings.mode === 'list' 
+                    ? filteredItems.map(item => renderListItem(item))
+                    : filteredItems.map(item => renderCard(item))
+                  }
+              </div>
 
-              {/* Load More Button */}
-              {/* Only show if we haven't filtered everything out locally (heuristic) */}
               {filteredItems.length > 0 && (
                   <div className="flex justify-center pt-4">
                       <button 
@@ -491,7 +509,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
           </div>
       )}
 
-      {/* 4. Floating Action Bar */}
       {selectedItems.length > 0 && (
         <div className="fixed bottom-20 md:bottom-8 left-1/2 -translate-x-1/2 bg-beatmap-card border border-beatmap-border/20 shadow-2xl rounded-full px-6 py-3 flex items-center gap-6 z-50 animate-in slide-in-from-bottom-10 fade-in duration-300">
           <div className="flex flex-col md:flex-row items-center gap-1 md:gap-2">
