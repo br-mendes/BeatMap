@@ -25,8 +25,11 @@ export const SocialShare: React.FC<SocialShareProps> = ({
   // Twitter Intent
   const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(targetUrl)}&hashtags=BeatMap,NewMusic,Spotify`;
 
+  // Safe check for navigator.share support
+  const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+
   const handleNativeShare = async () => {
-    if (navigator.share) {
+    if (canShare) {
       try {
         await navigator.share({
           title: shareTitle,
@@ -100,14 +103,14 @@ export const SocialShare: React.FC<SocialShareProps> = ({
         `}
         aria-label="Compartilhar no Instagram Stories ou Outros"
       >
-        {navigator.share ? <Instagram size={iconSize} /> : <Share2 size={iconSize} />}
+        {canShare ? <Instagram size={iconSize} /> : <Share2 size={iconSize} />}
         <span className={size === 'sm' ? 'hidden' : 'hidden md:inline'}>
-            {navigator.share ? 'Stories' : 'Compartilhar'}
+            {canShare ? 'Stories' : 'Compartilhar'}
         </span>
       </button>
 
       {/* 4. Copy Link Fallback */}
-      {!navigator.share && (
+      {!canShare && (
         <button 
             onClick={handleCopy}
             className={`

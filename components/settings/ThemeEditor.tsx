@@ -61,7 +61,8 @@ export const ThemeEditorPanel: React.FC = () => {
 
   const handleSaveCustomTheme = async () => {
       try {
-          let newTheme = { ...customTheme, isCustom: true };
+          // Explicitly type newTheme as Theme to match saveCustomTheme return type
+          let newTheme: Theme = { ...customTheme, isCustom: true };
           if (userId) {
               const saved = await saveCustomTheme(userId, newTheme);
               newTheme = saved;
