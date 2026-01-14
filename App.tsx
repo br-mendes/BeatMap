@@ -33,9 +33,9 @@ function App() {
 
       if (errorCode === 'provider_email_needs_verification') {
         setLoginError(
-          "O email da sua conta Spotify precisa ser verificado pelo Supabase. " +
-          "Um email de confirmação foi enviado para você. " +
-          "Se você é o administrador, verifique as configurações de 'Confirm Email' no painel do Supabase."
+          "Verificação Necessária: O Supabase enviou um email de confirmação para o endereço da sua conta Spotify. " +
+          "Por favor, verifique sua caixa de entrada (e spam) e clique no link para ativar seu acesso. " +
+          "Depois de confirmar, tente entrar novamente."
         );
       } else {
         const decodedDesc = errorDescription ? decodeURIComponent(errorDescription).replace(/\+/g, ' ') : error;
