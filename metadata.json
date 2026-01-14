@@ -1,0 +1,5 @@
+{
+  "name": "BeatMap",
+  "description": "Mapeando o som do seu mundo. Sistema completo de descoberta e gerenciamento de lançamentos musicais integrado ao Spotify.",
+  "requestFramePermissions": []
+}
