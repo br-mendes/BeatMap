@@ -2,13 +2,13 @@ import { Album, Artist, Track, User } from '../types';
 
 const SPOTIFY_API_BASE = 'https://api.spotify.com/v1';
 
-// MOCK DATA GENERATORS (For demo purposes when API key is missing/invalid)
+// --- MOCK DATA GENERATORS ---
 const mockImages = [
-  "https://picsum.photos/300/300?random=1",
-  "https://picsum.photos/300/300?random=2",
-  "https://picsum.photos/300/300?random=3",
-  "https://picsum.photos/300/300?random=4",
-  "https://picsum.photos/300/300?random=5",
+  "https://images.unsplash.com/photo-1493225255756-d9584f8606e9?w=300&h=300&fit=crop",
+  "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&h=300&fit=crop",
+  "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&h=300&fit=crop",
+  "https://images.unsplash.com/photo-1514525253440-b393452e3383?w=300&h=300&fit=crop",
+  "https://images.unsplash.com/photo-1459749411177-0473ef48ee23?w=300&h=300&fit=crop",
 ];
 
 const mockArtists: Artist[] = [
@@ -25,6 +25,7 @@ export const getMockReleases = (): Album[] => {
     artists: [mockArtists[i % mockArtists.length]],
     images: [{ url: mockImages[i % mockImages.length], height: 300, width: 300 }],
     release_date: new Date().toISOString().split('T')[0],
+    release_date_precision: 'day',
     total_tracks: 8,
     album_type: i % 2 === 0 ? 'single' : 'album',
     external_urls: { spotify: '#' },
@@ -32,7 +33,70 @@ export const getMockReleases = (): Album[] => {
   }));
 };
 
-// REAL API FUNCTIONS
+export const getMockTracks = (): Track[] => {
+    return Array.from({ length: 12 }).map((_, i) => ({
+        id: `mock-track-${i}`,
+        name: `Hit do Momento ${i + 1}`,
+        artists: [mockArtists[i % mockArtists.length]],
+        album: {
+            id: `mock-album-${i}`,
+            name: `Álbum ${i}`,
+            artists: [mockArtists[i % mockArtists.length]],
+            images: [{ url: mockImages[i % mockImages.length], height: 300, width: 300 }],
+            release_date: new Date().toISOString().split('T')[0],
+            release_date_precision: 'day',
+            total_tracks: 10,
+            album_type: 'album',
+            external_urls: { spotify: '#' },
+            uri: `spotify:album:mock-${i}`
+        },
+        duration_ms: 180000,
+        preview_url: null,
+        uri: `spotify:track:mock-${i}`,
+        external_urls: { spotify: '#' }
+    }));
+}
+
+// --- HELPER FUNCTIONS ---
+
+export const isDateInInterval = (
+    dateString: string, 
+    range: 'day' | 'week' | 'month' | 'custom',
+    customStart?: string,
+    customEnd?: string
+): boolean => {
+    if (!dateString) return false;
+    
+    const date = new Date(dateString);
+    const now = new Date();
+    
+    // Reset time parts for accurate day comparison
+    now.setHours(0, 0, 0, 0);
+    const itemDate = new Date(date);
+    itemDate.setHours(0, 0, 0, 0);
+
+    const diffTime = Math.abs(now.getTime() - itemDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (range === 'day') {
+        // Allow up to 2 days to account for timezone differences in releases
+        return diffDays <= 2; 
+    }
+    if (range === 'week') {
+        return diffDays <= 7;
+    }
+    if (range === 'month') {
+        return diffDays <= 30;
+    }
+    if (range === 'custom' && customStart && customEnd) {
+        const start = new Date(customStart);
+        const end = new Date(customEnd);
+        return itemDate >= start && itemDate <= end;
+    }
+    return true;
+};
+
+// --- API FUNCTIONS ---
 
 export const fetchUserProfile = async (token: string): Promise<User> => {
   try {
@@ -48,14 +112,15 @@ export const fetchUserProfile = async (token: string): Promise<User> => {
       display_name: 'Usuário Demo',
       email: 'demo@beatmap.com',
       product: 'premium',
-      images: [{ url: 'https://picsum.photos/200' }]
+      images: [{ url: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=100&q=80' }]
     };
   }
 };
 
-export const fetchNewReleases = async (token: string): Promise<Album[]> => {
+// Modified to fetch more items initially to allow for client-side date filtering
+export const fetchNewReleases = async (token: string, limit = 50, offset = 0): Promise<Album[]> => {
   try {
-    const res = await fetch(`${SPOTIFY_API_BASE}/browse/new-releases?country=BR&limit=20`, {
+    const res = await fetch(`${SPOTIFY_API_BASE}/browse/new-releases?country=BR&limit=${limit}&offset=${offset}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) throw new Error('Falha ao buscar lançamentos');
@@ -67,18 +132,47 @@ export const fetchNewReleases = async (token: string): Promise<Album[]> => {
   }
 };
 
-export const searchByGenre = async (token: string, genre: string): Promise<Album[]> => {
+// New function to search specifically for new tracks
+export const searchNewTracks = async (token: string, genre: string = '', limit = 50, offset = 0): Promise<Track[]> => {
+    try {
+        const year = new Date().getFullYear();
+        // Construct query: if genre exists use it, otherwise use tag:new or current year
+        let query = `year:${year}`;
+        if (genre) {
+            query += ` genre:${encodeURIComponent(genre)}`;
+        } else {
+            // "tag:new" works for albums mostly, for tracks we use year range and sort by popularity (or latest if possible, but Spotify search doesn't sort by date well)
+            // Adding a generic search term like 'a' or using a wildcard % isn't great, so we rely on year.
+            // Alternative: use recommendations endpoint if we had seeds.
+            // We'll filter strictly by date client-side.
+            query = `year:${year} tag:new`; 
+        }
+
+        const res = await fetch(`${SPOTIFY_API_BASE}/search?q=${query}&type=track&limit=${limit}&offset=${offset}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (!res.ok) throw new Error('Falha ao buscar músicas');
+        const data = await res.json();
+        return data.tracks.items;
+    } catch (e) {
+        console.error(e);
+        if (token.startsWith('mock')) return getMockTracks();
+        return [];
+    }
+};
+
+export const searchByGenre = async (token: string, genre: string, type: 'album' | 'track' = 'album', limit = 50): Promise<any[]> => {
   try {
-    // Spotify search for albums by genre
-    const res = await fetch(`${SPOTIFY_API_BASE}/search?q=genre:${encodeURIComponent(genre)}&type=album&limit=20`, {
+    const res = await fetch(`${SPOTIFY_API_BASE}/search?q=genre:${encodeURIComponent(genre)}&type=${type}&limit=${limit}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) throw new Error('Falha ao buscar por gênero');
     const data = await res.json();
-    return data.albums.items;
+    return type === 'album' ? data.albums.items : data.tracks.items;
   } catch (e) {
     console.error(e);
-    if (token.startsWith('mock')) return getMockReleases();
+    if (token.startsWith('mock')) return type === 'album' ? getMockReleases() : getMockTracks();
     return [];
   }
 };
@@ -86,17 +180,24 @@ export const searchByGenre = async (token: string, genre: string): Promise<Album
 export const getAlbums = async (token: string, ids: string[]): Promise<Album[]> => {
   if (ids.length === 0) return [];
   // Note: Spotify allows max 20 IDs per request.
-  // For simplicity, we slice the first 20 if more are selected.
-  const idsToFetch = ids.slice(0, 20).join(',');
+  const chunks = [];
+  for (let i = 0; i < ids.length; i += 20) {
+      chunks.push(ids.slice(i, i + 20));
+  }
   
+  let allAlbums: Album[] = [];
+
   try {
-    const res = await fetch(`${SPOTIFY_API_BASE}/albums?ids=${idsToFetch}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    
-    if (!res.ok) throw new Error('Falha ao buscar detalhes dos álbuns');
-    const data = await res.json();
-    return data.albums;
+    for (const chunk of chunks) {
+        const res = await fetch(`${SPOTIFY_API_BASE}/albums?ids=${chunk.join(',')}`, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+            const data = await res.json();
+            allAlbums = [...allAlbums, ...data.albums];
+        }
+    }
+    return allAlbums;
   } catch (e) {
     console.error(e);
     return [];
@@ -121,7 +222,6 @@ export const createPlaylist = async (token: string, userId: string, name: string
     return await res.json();
   } catch (e) {
     console.error(e);
-    // Return a mock response for UI feedback
     return {
       id: `mock-playlist-${Date.now()}`,
       name: name,
@@ -131,16 +231,23 @@ export const createPlaylist = async (token: string, userId: string, name: string
 };
 
 export const addTracksToPlaylist = async (token: string, playlistId: string, uris: string[]): Promise<void> => {
-  // In a real app we'd batch these if > 100
   if (!playlistId.startsWith('mock-') && uris.length > 0) {
-     await fetch(`${SPOTIFY_API_BASE}/playlists/${playlistId}/tracks`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ uris }),
-    });
+      // Chunk requests because limit is 100 uris per request
+      const chunks = [];
+      for (let i = 0; i < uris.length; i += 100) {
+          chunks.push(uris.slice(i, i + 100));
+      }
+
+      for (const chunk of chunks) {
+         await fetch(`${SPOTIFY_API_BASE}/playlists/${playlistId}/tracks`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ uris: chunk }),
+        });
+      }
   }
 };
 

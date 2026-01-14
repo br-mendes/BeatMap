@@ -25,7 +25,8 @@ export interface Album {
   name: string;
   artists: Artist[];
   images: SpotifyImage[];
-  release_date: string;
+  release_date: string; // YYYY-MM-DD, YYYY-MM or YYYY
+  release_date_precision: 'year' | 'month' | 'day';
   total_tracks: number;
   album_type: 'album' | 'single' | 'compilation';
   external_urls: { spotify: string };
@@ -43,6 +44,8 @@ export interface Track {
   duration_ms: number;
   preview_url: string | null;
   uri: string;
+  external_urls?: { spotify: string };
+  popularity?: number;
 }
 
 export interface Playlist {
@@ -56,10 +59,18 @@ export interface Playlist {
   external_urls: { spotify: string };
 }
 
+export type DateRangeType = 'day' | 'week' | 'month' | 'custom';
+export type ContentType = 'albums' | 'tracks';
+export type ViewMode = 'grid' | 'list';
+
 export interface FilterState {
   search: string;
-  type: 'all' | 'album' | 'single';
-  dateRange: 'day' | 'week' | 'month';
+  dateRange: DateRangeType;
+  customStartDate: string;
+  customEndDate: string;
+  genre: string;
+  contentType: ContentType;
+  viewMode: ViewMode;
 }
 
 export interface HistoryItem {
