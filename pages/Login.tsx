@@ -21,9 +21,9 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onDemo }) => {
         </div>
         
         <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-          O som do seu mundo, <br/>
+          Mapeando o som <br/>
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-beatmap-primary to-beatmap-secondary">
-            Mapeado.
+            do seu mundo.
           </span>
         </h2>
         
