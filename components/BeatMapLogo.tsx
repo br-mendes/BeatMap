@@ -1,45 +1,61 @@
 import React from 'react';
 
 export const BeatMapLogo: React.FC<{ size?: 'sm' | 'md' | 'lg' | 'xl' }> = ({ size = 'md' }) => {
-  const sizeClasses = {
-    sm: 'w-6 h-6',
+  const dimensions = {
+    sm: 'w-8 h-8',
     md: 'w-10 h-10',
-    lg: 'w-16 h-16',
-    xl: 'w-24 h-24'
+    lg: 'w-20 h-20',
+    xl: 'w-28 h-28'
+  };
+
+  const rounding = {
+    sm: 'rounded-lg',
+    md: 'rounded-xl',
+    lg: 'rounded-2xl',
+    xl: 'rounded-3xl'
   };
 
   const fontSizeClasses = {
     sm: 'text-lg',
     md: 'text-2xl',
-    lg: 'text-4xl',
-    xl: 'text-6xl'
+    lg: 'text-5xl',
+    xl: 'text-7xl'
   };
 
   return (
-    <div className="flex items-center gap-3 select-none">
-      <div className={`relative ${sizeClasses[size]} flex items-center justify-center`}>
-        {/* Animated background circles */}
-        <div className="absolute inset-0 bg-beatmap-primary rounded-full opacity-75 animate-pulse-slow blur-md"></div>
-        <div className="absolute inset-1 bg-beatmap-secondary rounded-full opacity-70 animate-pulse blur-sm"></div>
+    <div className="flex items-center gap-3 select-none group">
+      <div className={`relative ${dimensions[size]} flex items-center justify-center`}>
+        {/* Glow effect with pulse */}
+        <div className={`absolute inset-0 bg-beatmap-primary blur-xl opacity-30 group-hover:opacity-60 transition-opacity duration-500 rounded-full animate-pulse-slow`}></div>
         
-        {/* SVG Icon */}
-        <svg 
-          viewBox="0 0 24 24" 
-          fill="none" 
-          stroke="currentColor" 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round" 
-          className="relative z-10 text-white w-full h-full p-1.5"
-        >
-          <path d="M9 18V5l12-2v13" />
-          <circle cx="6" cy="18" r="3" />
-          <circle cx="21" cy="16" r="3" />
-          <path d="M2 12h.01" /> {/* Decorative dot */}
-          <path d="M22 22h.01" />
-        </svg>
+        {/* Main Container with Gradient */}
+        <div className={`relative w-full h-full bg-gradient-to-br from-beatmap-primary via-[#8b5cf6] to-beatmap-secondary ${rounding[size]} shadow-2xl flex items-center justify-center overflow-hidden transform transition-all duration-500 group-hover:rotate-6 group-hover:scale-105 border border-white/10`}>
+          
+          {/* Tech Grid Pattern */}
+          <div className="absolute inset-0 opacity-20" style={{ 
+            backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', 
+            backgroundSize: '6px 6px' 
+          }}></div>
+
+          {/* Icon: Pulse Wave */}
+          <svg 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="white" 
+            strokeWidth="2.5" 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            className="relative z-10 w-3/5 h-3/5 drop-shadow-md"
+          >
+            <path d="M2 12h3l3-8 5 16 3-8h6" />
+          </svg>
+          
+          {/* Shine effect */}
+          <div className="absolute -top-[50%] -left-[50%] w-[200%] h-[200%] bg-gradient-to-b from-white/10 to-transparent transform rotate-45 pointer-events-none"></div>
+        </div>
       </div>
-      <span className={`font-bold tracking-tight text-white ${fontSizeClasses[size]}`}>
+      
+      <span className={`font-black tracking-tighter text-white ${fontSizeClasses[size]}`}>
         Beat<span className="text-transparent bg-clip-text bg-gradient-to-r from-beatmap-primary to-beatmap-secondary">Map</span>
       </span>
     </div>
