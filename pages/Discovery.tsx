@@ -3,6 +3,7 @@ import { Sparkles, Calendar, Play, Pause, ThumbsUp, ThumbsDown, Heart, CheckCirc
 import { WeeklyDiscovery, RecommendedTrack } from '../types';
 import { getWeeklyDiscovery, updateDiscoveryFeedback, markDiscoverySaved, savePlaylistToDb } from '../lib/db';
 import { createPlaylist, addTracksToPlaylist } from '../lib/spotify';
+import { SocialShare } from '../components/SocialShare';
 
 interface DiscoveryProps {
     token: string | null;
@@ -14,6 +15,7 @@ export const Discovery: React.FC<DiscoveryProps> = ({ token, userId, supabaseUse
     const [discovery, setDiscovery] = useState<WeeklyDiscovery | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [savedPlaylistUrl, setSavedPlaylistUrl] = useState<string | null>(null);
     
     // Audio Preview
     const [playingPreview, setPlayingPreview] = useState<string | null>(null);
@@ -51,10 +53,17 @@ export const Discovery: React.FC<DiscoveryProps> = ({ token, userId, supabaseUse
         }
     };
 
-    const handleFeedback = (trackId: string, type: 'like' | 'dislike') => {
+    const handleFeedback = async (trackId: string, type: 'like' | 'dislike') => {
         if (!userId || !discovery) return;
-        const updated = updateDiscoveryFeedback(userId, discovery.weekId, trackId, type);
-        if (updated) setDiscovery(updated);
+        try {
+            // Explicitly await and cast to ensure TS knows it's not a Promise
+            const updated = await updateDiscoveryFeedback(userId, discovery.weekId, trackId, type) as WeeklyDiscovery | null;
+            if (updated) {
+                setDiscovery(updated);
+            }
+        } catch (e) {
+            console.error("Error updating feedback", e);
+        }
     };
 
     const handleSavePlaylist = async () => {
@@ -68,12 +77,11 @@ export const Discovery: React.FC<DiscoveryProps> = ({ token, userId, supabaseUse
             const playlist = await createPlaylist(token, userId, name, 'Sua seleção personalizada semanal do BeatMap.');
             await addTracksToPlaylist(token, playlist.id, uris);
             
+            const playlistUrl = playlist.external_urls?.spotify || `https://open.spotify.com/playlist/${playlist.id}`;
+            setSavedPlaylistUrl(playlistUrl);
+
             if (supabaseUserId) {
                 await markDiscoverySaved(userId, discovery.weekId);
-                // Convert Tracks to pseudo-Albums structure for DB compatibility if needed, 
-                // or update DB to handle playlists from tracks. 
-                // For now, we reuse the existing savePlaylistToDb which expects albums, 
-                // so we construct pseudo-albums from tracks.
                 const pseudoAlbums = discovery.tracks.map(t => t.album).filter(Boolean) as any[];
                 await savePlaylistToDb(supabaseUserId, name, playlist.id, pseudoAlbums, 'Discovery');
             }
@@ -115,27 +123,37 @@ export const Discovery: React.FC<DiscoveryProps> = ({ token, userId, supabaseUse
                              Semana {discovery.weekId.split('-W')[1]} de {discovery.weekId.split('-W')[0]}
                         </div>
                         <h1 className="text-4xl font-black text-white mb-2">Sua Descoberta Semanal</h1>
-                        <p className="text-gray-300 max-w-xl">
+                        <p className="text-gray-300 max-w-xl mb-6">
                             Uma seleção única de 30 músicas baseada no que você tem ouvido. 
                             Atualizada toda segunda-feira com o melhor algoritmo de recomendação.
                         </p>
                         
-                        <div className="mt-6 flex items-center gap-4">
+                        <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
                             <button 
                                 onClick={handleSavePlaylist}
                                 disabled={discovery.savedToLibrary || saving}
                                 className={`
                                     px-8 py-3 rounded-full font-bold flex items-center gap-2 transition-all 
                                     ${discovery.savedToLibrary 
-                                        ? 'bg-green-500/20 text-green-400 cursor-default' 
+                                        ? 'bg-green-500/20 text-green-400 cursor-default border border-green-500/50' 
                                         : 'bg-white text-black hover:bg-gray-200 hover:scale-105 shadow-lg shadow-white/10'}
                                 `}
                             >
                                 {saving ? <RefreshCw className="animate-spin" size={20} /> : (
                                     discovery.savedToLibrary ? <CheckCircle size={20} /> : <Heart size={20} fill="currentColor" className="text-red-500" />
                                 )}
-                                {discovery.savedToLibrary ? 'Salva na Biblioteca' : 'Salvar Playlist Completa'}
+                                {discovery.savedToLibrary ? 'Salva na Biblioteca' : 'Salvar Playlist'}
                             </button>
+
+                            {/* Social Share Buttons */}
+                            <div className="h-8 w-px bg-white/20 hidden md:block"></div>
+                            
+                            <SocialShare 
+                                spotifyUrl={savedPlaylistUrl}
+                                shareTitle="Minha Descoberta Semanal no BeatMap"
+                                shareText="Acabei de mapear 30 novas músicas incríveis com o BeatMap!"
+                                showSpotify={!!(discovery.savedToLibrary || savedPlaylistUrl)}
+                            />
                         </div>
                     </div>
                 </div>

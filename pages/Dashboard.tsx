@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-    Filter, Calendar, Music, Plus, ExternalLink, Check, RefreshCw, 
-    Disc, Mic2, Grid, List as ListIcon, Play, Pause, AlertCircle, LayoutGrid, Smartphone, Maximize2 
+    Filter, Calendar, Plus, Check, RefreshCw, 
+    Disc, Mic2, List as ListIcon, Play, Pause, AlertCircle, LayoutGrid, Smartphone, Maximize2 
 } from 'lucide-react';
 import { Album, FilterState, Track, DateRangeType } from '../types';
-import { 
-    fetchNewReleases, createPlaylist, addTracksToPlaylist, getAlbums, 
-    searchByGenre, searchNewTracks, isDateInInterval 
-} from '../lib/spotify';
+import { createPlaylist, addTracksToPlaylist, getAlbums, filterReleasesByDate } from '../lib/spotify';
 import { savePlaylistToDb } from '../lib/db';
 import { useLayout } from '../contexts/LayoutContext';
+import { useDebounce } from '../hooks/useDebounce';
+import { useSpotifyDiscovery } from '../hooks/useSpotifyDiscovery';
+import { OptimizedImage } from '../components/OptimizedImage';
 
 interface DashboardProps {
   token: string | null;
@@ -25,21 +25,16 @@ const COMMON_GENRES = [
 export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUserId, onPlaylistCreated }) => {
   const { settings, updateSettings } = useLayout();
   
-  // --- STATE ---
-  const [albums, setAlbums] = useState<Album[]>([]);
-  const [tracks, setTracks] = useState<Track[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [offset, setOffset] = useState(0);
-  
+  // --- LOCAL STATE ---
+  const [searchInput, setSearchInput] = useState('');
   const [filters, setFilters] = useState<FilterState>({
     search: '',
     dateRange: 'week',
     customStartDate: '',
     customEndDate: '',
     genre: '',
-    contentType: 'albums', // 'albums' or 'tracks'
-    viewMode: 'grid' // kept for type compatibility, but effectively controlled by context
+    contentType: 'albums',
+    viewMode: 'grid'
   });
 
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -49,78 +44,31 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
   const [playingPreview, setPlayingPreview] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // --- DATA LOADING ---
+  // --- DATA FETCHING HOOK ---
+  const debouncedSearch = useDebounce(searchInput, 500);
 
-  const loadData = async (isLoadMore = false) => {
-    if (!token) return;
-    
-    if (!isLoadMore) {
-        setLoading(true);
-        setOffset(0);
-    } else {
-        setLoadingMore(true);
-    }
-
-    try {
-      const currentOffset = isLoadMore ? offset + 50 : 0;
-      let newItems: any[] = [];
-
-      if (filters.contentType === 'albums') {
-          if (filters.genre) {
-              newItems = await searchByGenre(token, filters.genre, 'album', 50);
-          } else {
-              newItems = await fetchNewReleases(token, 50, currentOffset);
-          }
-          
-          if (isLoadMore) {
-              setAlbums(prev => [...prev, ...newItems]);
-              setOffset(prev => prev + 50);
-          } else {
-              setAlbums(newItems);
-              setOffset(50);
-          }
-      } else {
-          // Tracks
-          if (filters.genre) {
-              newItems = await searchByGenre(token, filters.genre, 'track', 50);
-          } else {
-              newItems = await searchNewTracks(token, '', 50, currentOffset);
-          }
-
-          if (isLoadMore) {
-              setTracks(prev => [...prev, ...newItems]);
-              setOffset(prev => prev + 50);
-          } else {
-              setTracks(newItems);
-              setOffset(50);
-          }
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  };
-
+  // Sync debounced search to filters
   useEffect(() => {
-    // Reset selections when switching content type
-    setSelectedItems([]);
-    setPlayingPreview(null);
-    if(audioRef.current) {
-        audioRef.current.pause();
-    }
-    loadData(false);
-  }, [token, filters.contentType, filters.genre]);
+    setFilters(prev => ({ ...prev, search: debouncedSearch }));
+  }, [debouncedSearch]);
 
-  // --- FILTERING ---
+  const { data, loading, error, hasMore, loadMore, reset } = useSpotifyDiscovery(token, filters);
 
-  const getFilteredItems = () => {
-    const items = filters.contentType === 'albums' ? albums : tracks;
-    
-    return items.filter(item => {
+  // Reset selections when content type changes
+  useEffect(() => {
+      setSelectedItems([]);
+      setPlayingPreview(null);
+      if(audioRef.current) {
+          audioRef.current.pause();
+      }
+  }, [filters.contentType]);
+
+  // --- CLIENT SIDE FILTERING ---
+  // The hook loads pages of data. We then filter visible items by search term and date range.
+  // Note: For large datasets, server-side filtering is better, but this works for the "New Releases" discovery flow.
+  
+  const filteredItems = data.filter(item => {
       const searchLower = filters.search.toLowerCase();
-      // Safe check for artists existence
       const artistMatch = item.artists?.some(a => a.name.toLowerCase().includes(searchLower)) || false;
       const nameMatch = item.name.toLowerCase().includes(searchLower);
       
@@ -128,18 +76,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
           ? (item as Album).release_date 
           : (item as Track).album?.release_date || '';
 
-      const dateMatch = isDateInInterval(
-          dateString, 
-          filters.dateRange, 
-          filters.customStartDate, 
-          filters.customEndDate
-      );
+      // Use the utility function provided in lib/spotify.ts (via new filterReleasesByDate if we wanted array processing, 
+      // but here we check individual items using the logic encapsulated in isDateInInterval which we assume filterReleasesByDate uses)
+      // Since we don't import isDateInInterval directly anymore to keep imports clean, we can rely on the fact that 
+      // filterReleasesByDate is available, but for single item check we can use filterReleasesByDate on a single-item array
+      
+      const dateMatch = filterReleasesByDate([item], filters.dateRange, filters.customStartDate, filters.customEndDate).length > 0;
 
       return (nameMatch || artistMatch) && dateMatch;
-    });
-  };
-
-  const filteredItems = getFilteredItems();
+  });
 
   // --- ACTIONS ---
 
@@ -168,7 +113,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
           });
       } else {
           // Tracks are already selected, just get URIs
-          const selectedTracks = tracks.filter(t => selectedItems.includes(t.id));
+          const selectedTracks = (data as Track[]).filter(t => selectedItems.includes(t.id));
           selectedTracks.forEach(t => trackUris.push(t.uri));
           sourceAlbums = selectedTracks.map(t => t.album as Album).filter(Boolean);
       }
@@ -216,9 +161,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
       }
   };
 
-  // --- VIEW RENDERING HELPERS ---
+  // --- RENDER HELPERS ---
 
-  // Determine container classes based on mode
   const getGridClasses = () => {
       switch (settings.mode) {
           case 'grid-compact': return 'grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3';
@@ -254,16 +198,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
         `}
       >
         <div className={`relative aspect-square rounded-lg overflow-hidden shadow-lg bg-black/40 ${isCompact ? 'mb-2' : 'mb-4'}`}>
-          {image && <img src={image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>}
+          {image && (
+              <OptimizedImage 
+                src={image} 
+                alt={item.name} 
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+              />
+          )}
           
-          {/* Action Overlay */}
           <div className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300 ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
               <div className={`rounded-full p-2 ${isSelected ? 'bg-beatmap-primary text-white' : 'bg-white text-black'}`}>
                 {isSelected ? <Check size={20} /> : <Plus size={20} />}
               </div>
           </div>
 
-          {/* Preview Button (Tracks Only) */}
           {filters.contentType === 'tracks' && previewUrl && (
               <button 
                 onClick={(e) => togglePreview(e, previewUrl)}
@@ -312,8 +260,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
             onClick={() => toggleSelection(item.id)}
             className={`flex items-center gap-4 ${paddingClass} rounded-lg cursor-pointer transition-colors border-l-4 ${isSelected ? 'bg-beatmap-text/10 border-beatmap-primary' : 'hover:bg-beatmap-text/5 border-transparent'}`}
         >
-            <div className="relative w-12 h-12 flex-shrink-0">
-                {image && <img src={image} className="w-full h-full rounded object-cover" alt="" />}
+            <div className="relative w-12 h-12 flex-shrink-0 rounded overflow-hidden">
+                {image && <OptimizedImage src={image} className="w-full h-full object-cover" alt={item.name} />}
                 {filters.contentType === 'tracks' && previewUrl && (
                      <button 
                         onClick={(e) => togglePreview(e, previewUrl)}
@@ -373,8 +321,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
                 <input 
                     type="text" 
                     placeholder={`Buscar ${filters.contentType === 'albums' ? 'álbuns' : 'músicas'} ou artistas...`}
-                    value={filters.search}
-                    onChange={(e) => setFilters({...filters, search: e.target.value})}
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
                     className="w-full bg-beatmap-bg/60 border border-beatmap-border/10 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-beatmap-primary transition-all text-beatmap-text placeholder-beatmap-muted"
                 />
                 <Filter className="absolute left-3 top-2.5 text-beatmap-muted w-4 h-4" />
@@ -435,7 +383,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
                   ))}
               </div>
 
-              {/* Advanced View Controls */}
               <div className="flex items-center bg-beatmap-bg/60 rounded-lg p-1 gap-1">
                   <button 
                     onClick={() => updateSettings({ mode: 'grid-compact' })}
@@ -470,7 +417,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
       </div>
 
       {/* 3. Results Area */}
-      {loading ? (
+      {loading && filteredItems.length === 0 ? (
            <div className="flex justify-center py-24">
              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-beatmap-primary"></div>
            </div>
@@ -479,7 +426,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
             <AlertCircle className="mx-auto h-12 w-12 text-beatmap-muted mb-4" />
             <p className="text-beatmap-muted">Nenhum resultado encontrado para os filtros atuais.</p>
             <button 
-                onClick={() => setFilters({...filters, search: '', dateRange: 'week', genre: '', customStartDate: '', customEndDate: ''})}
+                onClick={() => {
+                    setFilters({...filters, search: '', dateRange: 'week', genre: '', customStartDate: '', customEndDate: ''});
+                    setSearchInput('');
+                    reset();
+                }}
                 className="mt-4 text-beatmap-primary hover:text-beatmap-text flex items-center gap-2 mx-auto text-sm"
             >
                 <RefreshCw size={14} /> Resetar filtros
@@ -494,15 +445,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
                   }
               </div>
 
-              {filteredItems.length > 0 && (
+              {hasMore && (
                   <div className="flex justify-center pt-4">
                       <button 
-                        onClick={() => loadData(true)} 
-                        disabled={loadingMore}
+                        onClick={loadMore} 
+                        disabled={loading}
                         className="bg-beatmap-card border border-beatmap-border/10 text-beatmap-text px-6 py-2 rounded-full text-sm font-medium transition-all disabled:opacity-50 flex items-center gap-2 hover:bg-beatmap-text/10"
                       >
-                          {loadingMore && <div className="animate-spin h-3 w-3 border-t-2 border-beatmap-text rounded-full"></div>}
-                          {loadingMore ? 'Carregando...' : 'Carregar Mais'}
+                          {loading && <div className="animate-spin h-3 w-3 border-t-2 border-beatmap-text rounded-full"></div>}
+                          {loading ? 'Carregando...' : 'Carregar Mais'}
                       </button>
                   </div>
               )}

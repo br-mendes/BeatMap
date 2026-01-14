@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { DbPlaylist, DbPlaylistTrack, HistoryItem, Track, Album, UserStats, Notification, FollowedArtist, WeeklyDiscovery, RecommendedTrack, LayoutSettings, UserSettings, Theme } from '../types';
+import { DbPlaylist, DbPlaylistTrack, HistoryItem, Track, Album, UserStats, Notification, FollowedArtist, WeeklyDiscovery, RecommendedTrack, LayoutSettings, UserSettings, Theme, DbCustomTheme } from '../types';
 import { fetchRecommendations, fetchUserTopItems } from './spotify';
 
 // --- HISTORY & PLAYLISTS ---
@@ -255,6 +255,48 @@ export const saveUserPreferences = async (
         ...preferences,
         updated_at: new Date().toISOString()
     });
+};
+
+// --- CUSTOM THEMES ---
+
+export const getCustomThemes = async (userId: string): Promise<Theme[]> => {
+    const { data } = await supabase
+        .from('custom_themes')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+    
+    if (!data) return [];
+    
+    return data.map(d => ({
+        id: d.id,
+        name: d.name,
+        colors: d.colors,
+        isCustom: true
+    }));
+};
+
+export const saveCustomTheme = async (userId: string, theme: Theme) => {
+    const { data, error } = await supabase
+        .from('custom_themes')
+        .insert({
+            user_id: userId,
+            name: theme.name,
+            colors: theme.colors
+        })
+        .select()
+        .single();
+    
+    if (error) throw error;
+    return { ...theme, id: data.id }; // Return theme with new DB ID
+};
+
+export const deleteCustomTheme = async (userId: string, themeId: string) => {
+    await supabase
+        .from('custom_themes')
+        .delete()
+        .eq('id', themeId)
+        .eq('user_id', userId);
 };
 
 // --- NOTIFICATIONS ---

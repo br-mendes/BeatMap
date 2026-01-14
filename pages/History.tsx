@@ -1,6 +1,7 @@
 import React from 'react';
 import { HistoryItem } from '../types';
-import { Clock, ExternalLink, Music4, Trash2 } from 'lucide-react';
+import { Clock, Music4, Trash2 } from 'lucide-react';
+import { SocialShare } from '../components/SocialShare';
 
 interface HistoryProps {
   items: HistoryItem[];
@@ -27,9 +28,9 @@ export const History: React.FC<HistoryProps> = ({ items, onDelete }) => {
             <thead className="bg-beatmap-bg/40 text-xs uppercase text-beatmap-muted font-medium">
               <tr>
                 <th className="px-6 py-4">Nome da Playlist</th>
-                <th className="px-6 py-4">Releases</th>
-                <th className="px-6 py-4">Data de Criação</th>
-                <th className="px-6 py-4 text-right">Ação</th>
+                <th className="px-6 py-4 hidden md:table-cell">Releases</th>
+                <th className="px-6 py-4 hidden md:table-cell">Data</th>
+                <th className="px-6 py-4 text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-beatmap-border/5">
@@ -37,34 +38,44 @@ export const History: React.FC<HistoryProps> = ({ items, onDelete }) => {
                 <tr key={item.id} className="hover:bg-beatmap-text/5 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded bg-gradient-to-br from-beatmap-primary to-blue-600 flex items-center justify-center text-white font-bold">
+                      <div className="w-10 h-10 rounded bg-gradient-to-br from-beatmap-primary to-blue-600 flex items-center justify-center text-white font-bold shrink-0">
                         BM
                       </div>
-                      <span className="font-medium text-beatmap-text">{item.playlistName}</span>
+                      <div className="min-w-0">
+                          <span className="font-medium text-beatmap-text block truncate">{item.playlistName}</span>
+                          <div className="md:hidden text-xs text-beatmap-muted flex gap-2">
+                             <span>{item.trackCount} faixas</span>
+                             <span>•</span>
+                             <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+                          </div>
+                      </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-beatmap-muted">{item.trackCount} faixas</td>
-                  <td className="px-6 py-4 text-beatmap-muted flex items-center gap-2">
-                    <Clock size={14} />
-                    {new Date(item.createdAt).toLocaleString('pt-BR')}
+                  <td className="px-6 py-4 text-beatmap-muted hidden md:table-cell">{item.trackCount} faixas</td>
+                  <td className="px-6 py-4 text-beatmap-muted hidden md:table-cell">
+                    <div className="flex items-center gap-2">
+                         <Clock size={14} />
+                        {new Date(item.createdAt).toLocaleString('pt-BR')}
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-3">
-                      <a 
-                        href={item.spotifyUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-beatmap-accent hover:opacity-80 text-sm font-medium transition-colors"
-                        title="Abrir no Spotify"
-                      >
-                        <ExternalLink size={18} />
-                      </a>
+                      
+                      <SocialShare 
+                        spotifyUrl={item.spotifyUrl}
+                        shareTitle={`Playlist: ${item.playlistName}`}
+                        shareText={`Confira essa playlist que criei no BeatMap: ${item.playlistName}`}
+                        size="sm"
+                      />
+
+                      <div className="w-px h-4 bg-beatmap-border/20 mx-1"></div>
+
                       <button
                         onClick={() => onDelete(item.id)}
-                        className="text-beatmap-muted hover:text-red-500 transition-colors p-1"
+                        className="text-beatmap-muted hover:text-red-500 transition-colors p-2 rounded-full hover:bg-red-500/10"
                         title="Excluir do histórico"
                       >
-                        <Trash2 size={18} />
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </td>

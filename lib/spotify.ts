@@ -96,7 +96,48 @@ export const isDateInInterval = (
     return true;
 };
 
+// Alias for compatibility with new hook patterns
+export const filterReleasesByDate = (items: (Album | Track)[], range: 'day' | 'week' | 'month' | 'custom', start?: string, end?: string) => {
+    return items.filter(item => {
+        const dateString = 'release_date' in item 
+          ? (item as Album).release_date 
+          : (item as Track).album?.release_date || '';
+        return isDateInInterval(dateString, range, start, end);
+    });
+};
+
 // --- API FUNCTIONS ---
+
+export interface AdvancedFetchOptions {
+    offset: number;
+    limit: number;
+    type: 'albums' | 'tracks';
+    genre?: string;
+}
+
+export const fetchAdvancedReleases = async (token: string, options: AdvancedFetchOptions) => {
+    let items: any[] = [];
+    
+    if (options.type === 'albums') {
+        if (options.genre) {
+            items = await searchByGenre(token, options.genre, 'album', options.limit);
+        } else {
+            items = await fetchNewReleases(token, options.limit, options.offset);
+        }
+    } else {
+        if (options.genre) {
+            items = await searchByGenre(token, options.genre, 'track', options.limit);
+        } else {
+            items = await searchNewTracks(token, '', options.limit, options.offset);
+        }
+    }
+
+    return {
+        items,
+        hasMore: items.length === options.limit,
+        nextOffset: options.offset + options.limit
+    };
+};
 
 export const fetchUserProfile = async (token: string): Promise<User> => {
   try {

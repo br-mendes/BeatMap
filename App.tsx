@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect, Suspense } from 'react';
 import { supabase, spotifyConfig } from './lib/supabase';
 import { fetchUserProfile } from './lib/spotify';
 import { getUserHistory, deletePlaylist } from './lib/db';
@@ -6,29 +6,36 @@ import { getSavedTheme, applyTheme } from './lib/theme';
 import { User, HistoryItem } from './types';
 import { Layout } from './components/Layout';
 import { Login } from './pages/Login';
-import { Dashboard } from './pages/Dashboard';
-import { History } from './pages/History';
-import { Stats } from './pages/Stats';
-import { Settings } from './pages/Settings';
-import { Discovery } from './pages/Discovery';
+
+// Lazy Load Pages for Performance
+// Note: We need to use default exports or handle named exports via promise mapping
+const Dashboard = React.lazy(() => import('./pages/Dashboard').then(module => ({ default: module.Dashboard })));
+const HistoryPage = React.lazy(() => import('./pages/History').then(module => ({ default: module.History })));
+const Stats = React.lazy(() => import('./pages/Stats').then(module => ({ default: module.Stats })));
+const Settings = React.lazy(() => import('./pages/Settings').then(module => ({ default: module.Settings })));
+const Discovery = React.lazy(() => import('./pages/Discovery').then(module => ({ default: module.Discovery })));
+
+const LoadingSpinner = () => (
+  <div className="flex justify-center items-center h-full min-h-[50vh]">
+    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-beatmap-primary"></div>
+  </div>
+);
 
 function App() {
   const [session, setSession] = useState<any>(null);
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [view, setView] = useState('login'); // 'login' | 'dashboard' | 'history' | 'playlists' | 'stats'
+  const [view, setView] = useState('login'); 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isDemo, setIsDemo] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
-  // Apply theme as early as possible
   useLayoutEffect(() => {
     const savedTheme = getSavedTheme();
     applyTheme(savedTheme);
   }, []);
 
-  // Check for OAuth errors in URL on mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
@@ -38,7 +45,6 @@ function App() {
     const errorDescription = params.get('error_description') || hashParams.get('error_description');
 
     if (error) {
-      // Clear the URL to avoid user seeing the ugly parameters
       window.history.replaceState({}, document.title, window.location.pathname);
 
       if (errorCode === 'provider_email_needs_verification') {
@@ -54,7 +60,6 @@ function App() {
     }
   }, []);
 
-  // Initialize Session
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
@@ -71,7 +76,7 @@ function App() {
       if (session) {
         setToken(session.provider_token || null);
         setView('dashboard');
-        setLoginError(null); // Clear errors on success
+        setLoginError(null); 
       } else if (!isDemo) {
         setView('login');
       }
@@ -80,13 +85,11 @@ function App() {
     return () => subscription.unsubscribe();
   }, [isDemo]);
 
-  // Load User Profile and History
   useEffect(() => {
     if (token && session?.user?.id) {
       fetchUserProfile(token).then(profile => setUser(profile));
       loadHistory(session.user.id);
     } else if (isDemo) {
-      // Mock user for demo
       setUser({
         id: 'demo-user',
         display_name: 'Usuário Convidado',
@@ -94,7 +97,6 @@ function App() {
         product: 'free',
         images: [{ url: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=100&q=80' }]
       });
-      // Mock history for demo
       setHistory([{
         id: 'demo-1',
         playlistName: 'Demo Playlist',
@@ -112,12 +114,10 @@ function App() {
 
   const handleLogin = async () => {
     setLoginError(null);
-    // Uses the scopes from the configuration
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'spotify',
       options: {
         scopes: spotifyConfig.scopes.join(' '),
-        // Redirect to the current URL after auth
         redirectTo: window.location.origin, 
       },
     });
@@ -130,7 +130,7 @@ function App() {
   const handleDemo = () => {
     setIsDemo(true);
     setLoginError(null);
-    setToken('mock-token'); // Triggers mock data in spotify.ts
+    setToken('mock-token'); 
     setView('dashboard');
   };
 
@@ -148,7 +148,6 @@ function App() {
     if (session?.user?.id) {
       loadHistory(session.user.id);
     } else if (isDemo) {
-      // Add fake item for demo feel
       setHistory(prev => [{
         id: Math.random().toString(),
         playlistName: 'Nova Playlist Demo',
@@ -165,7 +164,7 @@ function App() {
       return;
     }
 
-    if (window.confirm('Tem certeza que deseja remover este item do histórico? Isso não apaga a playlist da sua conta Spotify.')) {
+    if (window.confirm('Tem certeza que deseja remover este item do histórico?')) {
       try {
         await deletePlaylist(id);
         if (session?.user?.id) {
@@ -188,52 +187,54 @@ function App() {
       activeTab={activeTab}
       setActiveTab={setActiveTab}
     >
-      {activeTab === 'dashboard' && (
-        <Dashboard 
-          token={token} 
-          userId={user?.id || null} 
-          supabaseUserId={session?.user?.id}
-          onPlaylistCreated={handleRefreshHistory}
-        />
-      )}
-      
-      {activeTab === 'discovery' && (
-        <Discovery 
-          token={token}
-          userId={user?.id || null}
-          supabaseUserId={session?.user?.id}
-        />
-      )}
-      
-      {activeTab === 'stats' && (
-        <Stats 
+      <Suspense fallback={<LoadingSpinner />}>
+        {activeTab === 'dashboard' && (
+          <Dashboard 
+            token={token} 
+            userId={user?.id || null} 
+            supabaseUserId={session?.user?.id}
+            onPlaylistCreated={handleRefreshHistory}
+          />
+        )}
+        
+        {activeTab === 'discovery' && (
+          <Discovery 
             token={token}
             userId={user?.id || null}
             supabaseUserId={session?.user?.id}
-        />
-      )}
+          />
+        )}
+        
+        {activeTab === 'stats' && (
+          <Stats 
+              token={token}
+              userId={user?.id || null}
+              supabaseUserId={session?.user?.id}
+          />
+        )}
 
-      {activeTab === 'history' && (
-        <History items={history} onDelete={handleDeletePlaylist} />
-      )}
-      
-      {activeTab === 'settings' && (
-        <Settings />
-      )}
+        {activeTab === 'history' && (
+          <HistoryPage items={history} onDelete={handleDeletePlaylist} />
+        )}
+        
+        {activeTab === 'settings' && (
+          <Settings />
+        )}
 
-      {activeTab === 'playlists' && (
-        <div className="flex flex-col items-center justify-center h-[60vh] text-center space-y-4">
-            <div className="bg-beatmap-card/30 p-6 rounded-full">
-                <svg className="w-12 h-12 text-beatmap-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
-            </div>
-            <h2 className="text-2xl font-bold">Minhas Playlists</h2>
-            <p className="text-beatmap-muted max-w-md">
-                Gerencie suas playlists importadas e sincronize com sua biblioteca. Esta funcionalidade estará disponível na versão Pro.
-            </p>
-        </div>
-      )}
+        {activeTab === 'playlists' && (
+          <div className="flex flex-col items-center justify-center h-[60vh] text-center space-y-4">
+              <div className="bg-beatmap-card/30 p-6 rounded-full">
+                  <svg className="w-12 h-12 text-beatmap-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+              </div>
+              <h2 className="text-2xl font-bold">Minhas Playlists</h2>
+              <p className="text-beatmap-muted max-w-md">
+                  Gerencie suas playlists importadas e sincronize com sua biblioteca. Esta funcionalidade estará disponível na versão Pro.
+              </p>
+          </div>
+        )}
+      </Suspense>
     </Layout>
   );
 }

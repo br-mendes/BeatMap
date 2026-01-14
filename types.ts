@@ -187,6 +187,15 @@ export interface Theme {
   isCustom?: boolean;
 }
 
+// New DB Custom Theme
+export interface DbCustomTheme {
+    id: string;
+    user_id: string;
+    name: string;
+    colors: ThemeColors;
+    created_at: string;
+}
+
 // Layout Types
 export type LayoutMode = 'grid-compact' | 'grid-normal' | 'list' | 'cards';
 export type AppFontSize = 'small' | 'normal' | 'large';

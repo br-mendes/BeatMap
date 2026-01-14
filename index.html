@@ -93,6 +93,12 @@
       .pwa-toast.show {
         transform: translateY(0);
       }
+      
+      /* Accessibility Focus Ring */
+      :focus-visible {
+        outline: 2px solid rgb(var(--color-primary));
+        outline-offset: 2px;
+      }
     </style>
   <script type="importmap">
 {
@@ -105,7 +111,7 @@
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.90.1",
     "vite": "https://esm.sh/vite@^7.3.1",
     "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-    "recharts": "https://esm.sh/recharts@2.12.0?external=react,react-dom"
+    "recharts": "https://esm.sh/recharts@^3.6.0"
   }
 }
 </script>
