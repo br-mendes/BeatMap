@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
-import { DbPlaylist, DbPlaylistTrack, HistoryItem, Track, Album, UserStats, Notification, FollowedArtist } from '../types';
+import { DbPlaylist, DbPlaylistTrack, HistoryItem, Track, Album, UserStats, Notification, FollowedArtist, WeeklyDiscovery, RecommendedTrack } from '../types';
+import { fetchRecommendations, fetchUserTopItems } from './spotify';
 
 export const getUserHistory = async (userId: string): Promise<HistoryItem[]> => {
   try {
@@ -275,4 +276,85 @@ export const toggleFollowArtist = async (userId: string, artistId: string, artis
     
     localStorage.setItem(`followed_artists_${userId}`, JSON.stringify(updated));
     return updated.includes(artistId);
+};
+
+// --- Weekly Discovery System ---
+
+const getWeekId = () => {
+    const d = new Date();
+    const d2 = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    d2.setUTCDate(d2.getUTCDate() + 4 - (d2.getUTCDay()||7));
+    const yearStart = new Date(Date.UTC(d2.getUTCFullYear(),0,1));
+    const weekNo = Math.ceil(( ( (d2.getTime() - yearStart.getTime()) / 86400000) + 1)/7);
+    return `${d2.getUTCFullYear()}-W${weekNo}`;
+};
+
+export const getWeeklyDiscovery = async (token: string, userId: string): Promise<WeeklyDiscovery> => {
+    const weekId = getWeekId();
+    const storageKey = `weekly_discovery_${userId}_${weekId}`;
+    
+    const stored = localStorage.getItem(storageKey);
+    if (stored) {
+        return JSON.parse(stored);
+    }
+
+    // Generate New Discovery
+    console.log("Generating new Weekly Discovery...");
+    
+    // 1. Get Top Artists for seeding
+    const topArtists = await fetchUserTopItems(token, 'artists', 'short_term', 5);
+    const seedIds = topArtists.map((a: any) => a.id).slice(0, 3);
+    const seedNames = topArtists.map((a: any) => a.name).slice(0, 3);
+    
+    // 2. Fetch Recommendations
+    // If no top artists (new user), fetch recommendations for 'pop'
+    const tracks = await fetchRecommendations(token, seedIds, [], [], 30);
+    
+    // 3. Format
+    const reasonText = seedNames.length > 0 
+        ? `Baseado em ${seedNames.join(', ')} e outros.`
+        : `Baseado nas tendências de hoje.`;
+
+    const discovery: WeeklyDiscovery = {
+        id: `wd-${weekId}`,
+        weekId: weekId,
+        generatedAt: new Date().toISOString(),
+        savedToLibrary: false,
+        tracks: tracks.map(t => ({
+            ...t,
+            reason: reasonText,
+            feedback: null
+        }))
+    };
+
+    localStorage.setItem(storageKey, JSON.stringify(discovery));
+    return discovery;
+};
+
+export const updateDiscoveryFeedback = (userId: string, weekId: string, trackId: string, type: 'like' | 'dislike') => {
+    const storageKey = `weekly_discovery_${userId}_${weekId}`;
+    const stored = localStorage.getItem(storageKey);
+    if (!stored) return;
+
+    const data: WeeklyDiscovery = JSON.parse(stored);
+    const updatedTracks = data.tracks.map(t => {
+        if (t.id === trackId) {
+            return { ...t, feedback: t.feedback === type ? null : type };
+        }
+        return t;
+    });
+
+    const updatedData = { ...data, tracks: updatedTracks };
+    localStorage.setItem(storageKey, JSON.stringify(updatedData));
+    return updatedData;
+};
+
+export const markDiscoverySaved = (userId: string, weekId: string) => {
+    const storageKey = `weekly_discovery_${userId}_${weekId}`;
+    const stored = localStorage.getItem(storageKey);
+    if (!stored) return;
+
+    const data = JSON.parse(stored);
+    data.savedToLibrary = true;
+    localStorage.setItem(storageKey, JSON.stringify(data));
 };

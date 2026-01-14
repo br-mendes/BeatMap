@@ -9,6 +9,7 @@ import { Dashboard } from './pages/Dashboard';
 import { History } from './pages/History';
 import { Stats } from './pages/Stats';
 import { Settings } from './pages/Settings';
+import { Discovery } from './pages/Discovery';
 
 function App() {
   const [session, setSession] = useState<any>(null);
@@ -186,6 +187,14 @@ function App() {
           userId={user?.id || null} 
           supabaseUserId={session?.user?.id}
           onPlaylistCreated={handleRefreshHistory}
+        />
+      )}
+      
+      {activeTab === 'discovery' && (
+        <Discovery 
+          token={token}
+          userId={user?.id || null}
+          supabaseUserId={session?.user?.id}
         />
       )}
       

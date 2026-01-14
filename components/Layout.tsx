@@ -1,5 +1,5 @@
 import React from 'react';
-import { Disc, History, LayoutDashboard, BarChart2, Settings } from 'lucide-react';
+import { Disc, History, LayoutDashboard, BarChart2, Settings, Sparkles } from 'lucide-react';
 import { Navbar } from './Navbar';
 import { User } from '../types';
 
@@ -36,7 +36,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, active
         </div>
         <div className="flex-1 px-3 space-y-1">
           <NavItem id="dashboard" icon={LayoutDashboard} label="Descobrir" />
-          <NavItem id="stats" icon={BarChart2} label="Minhas Estatísticas" />
+          <NavItem id="discovery" icon={Sparkles} label="Para Você" />
+          <NavItem id="stats" icon={BarChart2} label="Estatísticas" />
           <NavItem id="history" icon={History} label="Histórico" />
           <NavItem id="playlists" icon={Disc} label="Minhas Playlists" />
         </div>
@@ -67,6 +68,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, active
             <button onClick={() => setActiveTab('dashboard')} className={`p-2 flex flex-col items-center ${activeTab === 'dashboard' ? 'text-beatmap-primary' : 'text-gray-400'}`}>
               <LayoutDashboard size={20} />
             </button>
+             <button onClick={() => setActiveTab('discovery')} className={`p-2 flex flex-col items-center ${activeTab === 'discovery' ? 'text-beatmap-primary' : 'text-gray-400'}`}>
+              <Sparkles size={20} />
+            </button>
             <button onClick={() => setActiveTab('stats')} className={`p-2 flex flex-col items-center ${activeTab === 'stats' ? 'text-beatmap-primary' : 'text-gray-400'}`}>
               <BarChart2 size={20} />
             </button>
@@ -75,9 +79,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, active
             </button>
              <button onClick={() => setActiveTab('playlists')} className={`p-2 flex flex-col items-center ${activeTab === 'playlists' ? 'text-beatmap-primary' : 'text-gray-400'}`}>
               <Disc size={20} />
-            </button>
-            <button onClick={() => setActiveTab('settings')} className={`p-2 flex flex-col items-center ${activeTab === 'settings' ? 'text-beatmap-primary' : 'text-gray-400'}`}>
-              <Settings size={20} />
             </button>
         </div>
       </div>

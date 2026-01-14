@@ -269,3 +269,48 @@ export const fetchUserTopItems = async (token: string, type: 'artists' | 'tracks
         return [];
     }
 }
+
+export const fetchRecommendations = async (token: string, seedArtists: string[], seedGenres: string[], seedTracks: string[], limit=30): Promise<Track[]> => {
+    try {
+        const params = new URLSearchParams({
+            limit: limit.toString(),
+            market: 'BR'
+        });
+        
+        // Spotify API Limits: Total seeds (artists + genres + tracks) cannot exceed 5.
+        // We prioritize artists, then genres.
+        
+        let seedsCount = 0;
+        
+        if (seedArtists.length > 0) {
+            const slice = seedArtists.slice(0, 3); // Take up to 3 artists
+            params.append('seed_artists', slice.join(','));
+            seedsCount += slice.length;
+        }
+
+        if (seedGenres.length > 0 && seedsCount < 5) {
+             const available = 5 - seedsCount;
+             const slice = seedGenres.slice(0, available);
+             params.append('seed_genres', slice.join(','));
+             seedsCount += slice.length;
+        }
+
+        if (seedsCount === 0) {
+            // Fallback seed
+            params.append('seed_genres', 'pop'); 
+        }
+
+        const res = await fetch(`${SPOTIFY_API_BASE}/recommendations?${params.toString()}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (!res.ok) throw new Error('Error fetching recommendations');
+        const data = await res.json();
+        return data.tracks;
+
+    } catch (e) {
+        console.error(e);
+        if(token.startsWith('mock')) return getMockTracks();
+        return [];
+    }
+}

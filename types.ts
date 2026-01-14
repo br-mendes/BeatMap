@@ -153,3 +153,17 @@ export interface UserSettings {
   weeklySummary: boolean;
   notifyNewReleases: boolean;
 }
+
+// Discovery Types
+export interface RecommendedTrack extends Track {
+  reason: string;
+  feedback?: 'like' | 'dislike' | null;
+}
+
+export interface WeeklyDiscovery {
+  id: string;
+  weekId: string; // Format: YYYY-WW
+  tracks: RecommendedTrack[];
+  generatedAt: string;
+  savedToLibrary: boolean;
+}
