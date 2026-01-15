@@ -120,11 +120,7 @@ export const filterReleasesByDate = (items: (Album | Track)[], range: 'day' | 'w
 // Helper to get current relevant years for search context
 const getSearchYears = () => {
     const currentYear = new Date().getFullYear();
-    const currentMonth = new Date().getMonth(); // 0-11
-    // If it's early in the year (Jan/Feb), include previous year to ensure results
-    if (currentMonth < 2) {
-        return `${currentYear - 1}-${currentYear}`;
-    }
+    // Strictly return current year to ensure freshness when filters are removed
     return `${currentYear}`;
 };
 
