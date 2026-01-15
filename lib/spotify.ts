@@ -142,7 +142,7 @@ export const fetchAdvancedReleases = async (token: string, options: AdvancedFetc
     
     if (!options.bypassCache) {
         try {
-            const cachedRaw = sessionStorage.getItem(cacheKey);
+            const cachedRaw = localStorage.getItem(cacheKey);
             if (cachedRaw) {
                 const { timestamp, data } = JSON.parse(cachedRaw);
                 // Validate TTL
@@ -151,7 +151,7 @@ export const fetchAdvancedReleases = async (token: string, options: AdvancedFetc
                     return data; // Return cached structure
                 } else {
                     // Expired
-                    sessionStorage.removeItem(cacheKey);
+                    localStorage.removeItem(cacheKey);
                 }
             }
         } catch (e) {
@@ -186,25 +186,25 @@ export const fetchAdvancedReleases = async (token: string, options: AdvancedFetc
     // Only cache if we got results
     if (items && items.length > 0) {
         try {
-            sessionStorage.setItem(cacheKey, JSON.stringify({
+            localStorage.setItem(cacheKey, JSON.stringify({
                 timestamp: Date.now(),
                 data: result
             }));
         } catch (e) {
             // If storage is full, clear old BeatMap entries
             try {
-                Object.keys(sessionStorage).forEach(key => {
+                Object.keys(localStorage).forEach(key => {
                     if (key.startsWith(CACHE_PREFIX)) {
-                        sessionStorage.removeItem(key);
+                        localStorage.removeItem(key);
                     }
                 });
                 // Try saving again once
-                sessionStorage.setItem(cacheKey, JSON.stringify({
+                localStorage.setItem(cacheKey, JSON.stringify({
                     timestamp: Date.now(),
                     data: result
                 }));
             } catch (retryError) {
-                console.warn('SessionStorage quota exceeded, caching disabled for this session.');
+                console.warn('LocalStorage quota exceeded, caching disabled for this session.');
             }
         }
     }
