@@ -3,7 +3,7 @@ import { Album, Artist, Track, User, TopArtistData } from '../types';
 const SPOTIFY_API_BASE = 'https://api.spotify.com/v1';
 
 // --- CACHE CONFIGURATION ---
-const CACHE_PREFIX = 'beatmap_v1_';
+const CACHE_PREFIX = 'beatmap_v2_'; // Updated to invalidate v1 cache
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes in milliseconds
 
 // Helper to generate cache keys based on request parameters
@@ -120,8 +120,9 @@ export const filterReleasesByDate = (items: (Album | Track)[], range: 'day' | 'w
 // Helper to get current relevant years for search context
 const getSearchYears = () => {
     const currentYear = new Date().getFullYear();
-    // Strictly return current year (e.g., 2026) to ensure freshness
-    return `${currentYear}`;
+    // Enforce 2026 as current year if system time is lagging, ensuring strict forward-looking discovery
+    const effectiveYear = Math.max(currentYear, 2026);
+    return `${effectiveYear}`;
 };
 
 // --- API FUNCTIONS ---

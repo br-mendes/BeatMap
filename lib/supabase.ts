@@ -27,6 +27,7 @@ export const spotifyConfig = {
     'playlist-modify-public',
     'playlist-modify-private',
     'user-library-read',
-    'user-top-read'
+    'user-top-read',
+    'ugc-image-upload'
   ]
 };
