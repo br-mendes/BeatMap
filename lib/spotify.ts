@@ -106,6 +106,17 @@ export const filterReleasesByDate = (items: (Album | Track)[], range: 'day' | 'w
     });
 };
 
+// Helper to get current relevant years for search context
+const getSearchYears = () => {
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth(); // 0-11
+    // If it's early in the year (Jan/Feb), include previous year to ensure results
+    if (currentMonth < 2) {
+        return `${currentYear - 1}-${currentYear}`;
+    }
+    return `${currentYear}`;
+};
+
 // --- API FUNCTIONS ---
 
 export interface AdvancedFetchOptions {
@@ -120,21 +131,21 @@ export const fetchAdvancedReleases = async (token: string, options: AdvancedFetc
     
     if (options.type === 'albums') {
         if (options.genre) {
-            items = await searchByGenre(token, options.genre, 'album', options.limit);
+            items = await searchByGenre(token, options.genre, 'album', options.limit, options.offset);
         } else {
             items = await fetchNewReleases(token, options.limit, options.offset);
         }
     } else {
         if (options.genre) {
-            items = await searchByGenre(token, options.genre, 'track', options.limit);
+            items = await searchByGenre(token, options.genre, 'track', options.limit, options.offset);
         } else {
             items = await searchNewTracks(token, '', options.limit, options.offset);
         }
     }
 
     return {
-        items,
-        hasMore: items.length === options.limit,
+        items: items || [],
+        hasMore: items ? items.length === options.limit : false,
         nextOffset: options.offset + options.limit
     };
 };
@@ -174,15 +185,17 @@ export const fetchNewReleases = async (token: string, limit = 50, offset = 0): P
 
 export const searchNewTracks = async (token: string, genre: string = '', limit = 50, offset = 0): Promise<Track[]> => {
     try {
-        const year = new Date().getFullYear();
-        let query = `year:${year}`;
+        const years = getSearchYears();
+        let query = `year:${years}`;
+        
+        // Remove legacy tag:new which is unreliable. 
+        // Searching by current year is the best way to get "recent" tracks via Search API.
+        
         if (genre) {
-            query += ` genre:${encodeURIComponent(genre)}`;
-        } else {
-            query = `year:${year} tag:new`; 
+            query += ` genre:"${genre}"`;
         }
 
-        const res = await fetch(`${SPOTIFY_API_BASE}/search?q=${query}&type=track&limit=${limit}&offset=${offset}`, {
+        const res = await fetch(`${SPOTIFY_API_BASE}/search?q=${encodeURIComponent(query)}&type=track&market=BR&limit=${limit}&offset=${offset}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -190,15 +203,19 @@ export const searchNewTracks = async (token: string, genre: string = '', limit =
         const data = await res.json();
         return data.tracks.items;
     } catch (e) {
-        console.error(e);
+        console.error("Search error:", e);
         if (token.startsWith('mock')) return getMockTracks();
         return [];
     }
 };
 
-export const searchByGenre = async (token: string, genre: string, type: 'album' | 'track' = 'album', limit = 50): Promise<any[]> => {
+export const searchByGenre = async (token: string, genre: string, type: 'album' | 'track' = 'album', limit = 50, offset = 0): Promise<any[]> => {
   try {
-    const res = await fetch(`${SPOTIFY_API_BASE}/search?q=genre:${encodeURIComponent(genre)}&type=${type}&limit=${limit}`, {
+    // Inject year filter to ensure we get RECENT items for the genre, not just all-time hits
+    const years = getSearchYears();
+    const query = `genre:"${genre}" year:${years}`;
+    
+    const res = await fetch(`${SPOTIFY_API_BASE}/search?q=${encodeURIComponent(query)}&type=${type}&market=BR&limit=${limit}&offset=${offset}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) throw new Error('Falha ao buscar por gênero');
@@ -222,7 +239,7 @@ export const getAlbums = async (token: string, ids: string[]): Promise<Album[]> 
 
   try {
     for (const chunk of chunks) {
-        const res = await fetch(`${SPOTIFY_API_BASE}/albums?ids=${chunk.join(',')}`, {
+        const res = await fetch(`${SPOTIFY_API_BASE}/albums?ids=${chunk.join(',')}&market=BR`, {
             headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
@@ -285,7 +302,7 @@ export const addTracksToPlaylist = async (token: string, playlistId: string, uri
 
 export const searchTracks = async (token: string, query: string): Promise<Track[]> => {
     try {
-        const res = await fetch(`${SPOTIFY_API_BASE}/search?q=${encodeURIComponent(query)}&type=track&limit=10`, {
+        const res = await fetch(`${SPOTIFY_API_BASE}/search?q=${encodeURIComponent(query)}&type=track&market=BR&limit=10`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         const data = await res.json();
