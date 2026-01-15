@@ -300,13 +300,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
          <div className="flex bg-beatmap-text/5 p-1 rounded-lg border border-beatmap-border/5">
              <button 
                 onClick={() => setFilters({...filters, contentType: 'albums'})}
-                className={`flex items-center gap-2 px-6 py-2 rounded-md text-sm font-medium transition-all ${filters.contentType === 'albums' ? 'bg-beatmap-primary text-white shadow-lg' : 'text-beatmap-muted hover:text-beatmap-text'}`}
+                className={`flex items-center gap-2 px-6 py-2 rounded-md text-sm font-medium transition-all ${filters.contentType === 'albums' ? 'bg-beatmap-primary text-white shadow-lg shadow-beatmap-primary/20' : 'text-beatmap-muted hover:text-beatmap-text'}`}
              >
                 <Disc size={16} /> Álbuns
              </button>
              <button 
                 onClick={() => setFilters({...filters, contentType: 'tracks'})}
-                className={`flex items-center gap-2 px-6 py-2 rounded-md text-sm font-medium transition-all ${filters.contentType === 'tracks' ? 'bg-beatmap-primary text-white shadow-lg' : 'text-beatmap-muted hover:text-beatmap-text'}`}
+                className={`flex items-center gap-2 px-6 py-2 rounded-md text-sm font-medium transition-all ${filters.contentType === 'tracks' ? 'bg-beatmap-primary text-white shadow-lg shadow-beatmap-primary/20' : 'text-beatmap-muted hover:text-beatmap-text'}`}
              >
                 <Mic2 size={16} /> Músicas
              </button>
@@ -323,7 +323,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
                     placeholder={`Buscar ${filters.contentType === 'albums' ? 'álbuns' : 'músicas'} ou artistas...`}
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
-                    className="w-full bg-beatmap-bg/60 border border-beatmap-border/10 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-beatmap-primary transition-all text-beatmap-text placeholder-beatmap-muted"
+                    className="w-full bg-beatmap-bg/60 border border-beatmap-border/10 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-beatmap-primary transition-all text-beatmap-text placeholder-beatmap-muted focus:ring-1 focus:ring-beatmap-primary/50"
                 />
                 <Filter className="absolute left-3 top-2.5 text-beatmap-muted w-4 h-4" />
               </div>
@@ -334,7 +334,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
                           <button
                             key={range}
                             onClick={() => setFilters({...filters, dateRange: range})}
-                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${filters.dateRange === range ? 'bg-beatmap-text/10 text-beatmap-text' : 'text-beatmap-muted hover:text-beatmap-text'}`}
+                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${filters.dateRange === range ? 'bg-beatmap-primary/10 text-beatmap-primary font-bold' : 'text-beatmap-muted hover:text-beatmap-text'}`}
                           >
                               {range === 'day' && 'Hoje'}
                               {range === 'week' && '7 Dias'}
@@ -365,10 +365,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
           </div>
 
           <div className="flex items-center justify-between border-t border-beatmap-border/5 pt-4">
-              <div className="flex items-center gap-3 overflow-x-auto pb-1 max-w-[60%] hide-scrollbar">
+              <div className="flex items-center gap-3 overflow-x-auto pb-2 max-w-[60%] hide-scrollbar">
                   <button 
                     onClick={() => setFilters({...filters, genre: ''})}
-                    className={`whitespace-nowrap px-3 py-1 rounded-full text-xs font-medium border transition-colors ${filters.genre === '' ? 'bg-beatmap-text text-beatmap-bg border-beatmap-text' : 'bg-transparent text-beatmap-muted border-beatmap-border/20 hover:border-beatmap-border'}`}
+                    className={`whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-bold border transition-all duration-300 ${
+                        filters.genre === '' 
+                        ? 'bg-beatmap-primary text-white border-beatmap-primary shadow-[0_0_15px_rgba(139,92,246,0.3)] scale-105' 
+                        : 'bg-beatmap-card/40 text-beatmap-muted border-beatmap-border/10 hover:border-beatmap-primary/50 hover:text-white hover:bg-beatmap-primary/10'
+                    }`}
                   >
                       Todos
                   </button>
@@ -376,39 +380,43 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
                     <button 
                         key={g} 
                         onClick={() => setFilters({...filters, genre: g})}
-                        className={`whitespace-nowrap px-3 py-1 rounded-full text-xs font-medium border transition-colors ${filters.genre === g ? 'bg-beatmap-text text-beatmap-bg border-beatmap-text' : 'bg-transparent text-beatmap-muted border-beatmap-border/20 hover:border-beatmap-border'}`}
+                        className={`whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-bold border transition-all duration-300 ${
+                            filters.genre === g 
+                            ? 'bg-beatmap-primary text-white border-beatmap-primary shadow-[0_0_15px_rgba(139,92,246,0.3)] scale-105' 
+                            : 'bg-beatmap-card/40 text-beatmap-muted border-beatmap-border/10 hover:border-beatmap-primary/50 hover:text-white hover:bg-beatmap-primary/10'
+                        }`}
                     >
                         {g}
                     </button>
                   ))}
               </div>
 
-              <div className="flex items-center bg-beatmap-bg/60 rounded-lg p-1 gap-1">
+              <div className="flex items-center bg-beatmap-bg/60 rounded-lg p-1 gap-1 border border-beatmap-border/10">
                   <button 
                     onClick={() => updateSettings({ mode: 'grid-compact' })}
                     title="Grid Compacto"
-                    className={`p-1.5 rounded ${settings.mode === 'grid-compact' ? 'bg-beatmap-text/20 text-beatmap-text' : 'text-beatmap-muted hover:text-beatmap-text'}`}
+                    className={`p-1.5 rounded transition-all ${settings.mode === 'grid-compact' ? 'bg-beatmap-primary text-white shadow-md' : 'text-beatmap-muted hover:text-beatmap-text'}`}
                   >
                       <Smartphone size={16} />
                   </button>
                   <button 
                     onClick={() => updateSettings({ mode: 'grid-normal' })}
                     title="Grid Normal"
-                    className={`p-1.5 rounded ${settings.mode === 'grid-normal' ? 'bg-beatmap-text/20 text-beatmap-text' : 'text-beatmap-muted hover:text-beatmap-text'}`}
+                    className={`p-1.5 rounded transition-all ${settings.mode === 'grid-normal' ? 'bg-beatmap-primary text-white shadow-md' : 'text-beatmap-muted hover:text-beatmap-text'}`}
                   >
                       <LayoutGrid size={16} />
                   </button>
                    <button 
                     onClick={() => updateSettings({ mode: 'cards' })}
                     title="Cards Expandidos"
-                    className={`p-1.5 rounded ${settings.mode === 'cards' ? 'bg-beatmap-text/20 text-beatmap-text' : 'text-beatmap-muted hover:text-beatmap-text'}`}
+                    className={`p-1.5 rounded transition-all ${settings.mode === 'cards' ? 'bg-beatmap-primary text-white shadow-md' : 'text-beatmap-muted hover:text-beatmap-text'}`}
                   >
                       <Maximize2 size={16} />
                   </button>
                   <button 
                     onClick={() => updateSettings({ mode: 'list' })}
                     title="Lista"
-                    className={`p-1.5 rounded ${settings.mode === 'list' ? 'bg-beatmap-text/20 text-beatmap-text' : 'text-beatmap-muted hover:text-beatmap-text'}`}
+                    className={`p-1.5 rounded transition-all ${settings.mode === 'list' ? 'bg-beatmap-primary text-white shadow-md' : 'text-beatmap-muted hover:text-beatmap-text'}`}
                   >
                       <ListIcon size={16} />
                   </button>
