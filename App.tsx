@@ -8,7 +8,6 @@ import { Layout } from './components/Layout';
 import { Login } from './pages/Login';
 
 // Lazy Load Pages for Performance
-// Note: We need to use default exports or handle named exports via promise mapping
 const Dashboard = React.lazy(() => import('./pages/Dashboard').then(module => ({ default: module.Dashboard })));
 const HistoryPage = React.lazy(() => import('./pages/History').then(module => ({ default: module.History })));
 const Stats = React.lazy(() => import('./pages/Stats').then(module => ({ default: module.Stats })));
@@ -54,8 +53,15 @@ function App() {
           "Depois de confirmar, tente entrar novamente."
         );
       } else {
-        const decodedDesc = errorDescription ? decodeURIComponent(errorDescription).replace(/\+/g, ' ') : error;
-        setLoginError(`Erro no login: ${decodedDesc}`);
+        let decodedDesc = error;
+        if (errorDescription) {
+            try {
+                decodedDesc = decodeURIComponent(errorDescription).replace(/\+/g, ' ');
+            } catch (e) {
+                decodedDesc = errorDescription;
+            }
+        }
+        setLoginError(`Erro no login: ${typeof decodedDesc === 'object' ? JSON.stringify(decodedDesc) : decodedDesc}`);
       }
     }
   }, []);
@@ -122,8 +128,9 @@ function App() {
       },
     });
     if (error) {
-      console.error('Erro no login:', error.message);
-      setLoginError('Erro ao iniciar conexão com Spotify: ' + error.message);
+      console.error('Erro no login:', error);
+      const msg = error.message || (typeof error === 'string' ? error : JSON.stringify(error));
+      setLoginError('Erro ao iniciar conexão com Spotify: ' + msg);
     }
   };
 
