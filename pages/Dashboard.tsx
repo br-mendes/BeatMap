@@ -64,26 +64,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
   }, [filters.contentType]);
 
   // --- CLIENT SIDE FILTERING ---
-  // The hook loads pages of data. We then filter visible items by search term and date range.
-  // Note: For large datasets, server-side filtering is better, but this works for the "New Releases" discovery flow.
   
-  const filteredItems = data.filter(item => {
-      const searchLower = filters.search.toLowerCase();
-      const artistMatch = item.artists?.some(a => a.name.toLowerCase().includes(searchLower)) || false;
-      const nameMatch = item.name.toLowerCase().includes(searchLower);
-      
-      const dateString = filters.contentType === 'albums' 
-          ? (item as Album).release_date 
-          : (item as Track).album?.release_date || '';
+  const isSearchActive = filters.search.trim().length > 0;
 
-      // Use the utility function provided in lib/spotify.ts (via new filterReleasesByDate if we wanted array processing, 
-      // but here we check individual items using the logic encapsulated in isDateInInterval which we assume filterReleasesByDate uses)
-      // Since we don't import isDateInInterval directly anymore to keep imports clean, we can rely on the fact that 
-      // filterReleasesByDate is available, but for single item check we can use filterReleasesByDate on a single-item array
+  const filteredItems = data.filter(item => {
+      // If search is active, we bypass the date filter because API results are relevant to the query 
+      // and might not fall within the "Last Week" default range.
+      if (isSearchActive) {
+          return true;
+      }
       
       const dateMatch = filterReleasesByDate([item], filters.dateRange, filters.customStartDate, filters.customEndDate).length > 0;
-
-      return (nameMatch || artistMatch) && dateMatch;
+      return dateMatch;
   });
 
   // --- ACTIONS ---
@@ -329,12 +321,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                  <div className="flex bg-beatmap-bg/60 rounded-lg p-1 border border-beatmap-border/10">
+                  <div className={`flex bg-beatmap-bg/60 rounded-lg p-1 border border-beatmap-border/10 transition-opacity ${isSearchActive ? 'opacity-40 cursor-not-allowed' : ''}`}>
                       {(['day', 'week', 'month', 'custom'] as DateRangeType[]).map((range) => (
                           <button
                             key={range}
+                            disabled={isSearchActive}
                             onClick={() => setFilters({...filters, dateRange: range})}
-                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${filters.dateRange === range ? 'bg-beatmap-primary/10 text-beatmap-primary font-bold' : 'text-beatmap-muted hover:text-beatmap-text'}`}
+                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${filters.dateRange === range ? 'bg-beatmap-primary/10 text-beatmap-primary font-bold' : 'text-beatmap-muted hover:text-beatmap-text'} ${isSearchActive ? 'cursor-not-allowed' : ''}`}
+                            title={isSearchActive ? 'Filtro de data desativado durante a busca' : ''}
                           >
                               {range === 'day' && 'Hoje'}
                               {range === 'week' && '7 Dias'}
@@ -344,7 +338,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, userId, supabaseUse
                       ))}
                   </div>
 
-                  {filters.dateRange === 'custom' && (
+                  {filters.dateRange === 'custom' && !isSearchActive && (
                       <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-5">
                           <input 
                             type="date" 
