@@ -7,8 +7,10 @@ const CACHE_PREFIX = 'beatmap_v1_';
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes in milliseconds
 
 // Helper to generate cache keys based on request parameters
-const getCacheKey = (type: string, genre: string, offset: number, limit: number) => {
-  return `${CACHE_PREFIX}${type}_${genre || 'all'}_${limit}_${offset}`;
+const getCacheKey = (type: string, genre: string, query: string, offset: number, limit: number) => {
+  // Sanitize query to avoid cache key issues
+  const safeQuery = query ? query.replace(/[^a-zA-Z0-9]/g, '') : 'all';
+  return `${CACHE_PREFIX}${type}_${genre || 'gen-all'}_q-${safeQuery}_${limit}_${offset}`;
 };
 
 // --- MOCK DATA GENERATORS ---
@@ -133,12 +135,19 @@ export interface AdvancedFetchOptions {
     limit: number;
     type: 'albums' | 'tracks';
     genre?: string;
+    query?: string; // New field for search
     bypassCache?: boolean;
 }
 
 export const fetchAdvancedReleases = async (token: string, options: AdvancedFetchOptions) => {
     // 1. Check Cache
-    const cacheKey = getCacheKey(options.type, options.genre || '', options.offset, options.limit);
+    const cacheKey = getCacheKey(
+        options.type, 
+        options.genre || '', 
+        options.query || '', 
+        options.offset, 
+        options.limit
+    );
     
     if (!options.bypassCache) {
         try {
@@ -147,10 +156,8 @@ export const fetchAdvancedReleases = async (token: string, options: AdvancedFetc
                 const { timestamp, data } = JSON.parse(cachedRaw);
                 // Validate TTL
                 if (Date.now() - timestamp < CACHE_TTL) {
-                    // console.debug(`[Cache Hit] Serving ${options.type} offset=${options.offset}`);
-                    return data; // Return cached structure
+                    return data; 
                 } else {
-                    // Expired
                     localStorage.removeItem(cacheKey);
                 }
             }
@@ -162,17 +169,24 @@ export const fetchAdvancedReleases = async (token: string, options: AdvancedFetc
     // 2. Fetch from API if not cached
     let items: any[] = [];
     
-    if (options.type === 'albums') {
-        if (options.genre) {
-            items = await searchByGenre(token, options.genre, 'album', options.limit, options.offset);
-        } else {
-            items = await fetchNewReleases(token, options.limit, options.offset);
-        }
+    if (options.query && options.query.trim().length > 0) {
+        // If there is a direct search query, we MUST use the Search API
+        items = await searchItems(token, options.query, options.type, options.genre, options.limit, options.offset);
     } else {
-        if (options.genre) {
-            items = await searchByGenre(token, options.genre, 'track', options.limit, options.offset);
+        // No search query, rely on discovery logic
+        if (options.type === 'albums') {
+            if (options.genre) {
+                items = await searchByGenre(token, options.genre, 'album', options.limit, options.offset);
+            } else {
+                items = await fetchNewReleases(token, options.limit, options.offset);
+            }
         } else {
-            items = await searchNewTracks(token, '', options.limit, options.offset);
+            // Tracks
+            if (options.genre) {
+                items = await searchByGenre(token, options.genre, 'track', options.limit, options.offset);
+            } else {
+                items = await searchNewTracks(token, '', options.limit, options.offset);
+            }
         }
     }
 
@@ -183,7 +197,6 @@ export const fetchAdvancedReleases = async (token: string, options: AdvancedFetc
     };
 
     // 3. Save to Cache
-    // Only cache if we got results
     if (items && items.length > 0) {
         try {
             localStorage.setItem(cacheKey, JSON.stringify({
@@ -191,14 +204,13 @@ export const fetchAdvancedReleases = async (token: string, options: AdvancedFetc
                 data: result
             }));
         } catch (e) {
-            // If storage is full, clear old BeatMap entries
             try {
+                // Clear old BeatMap entries if quota exceeded
                 Object.keys(localStorage).forEach(key => {
                     if (key.startsWith(CACHE_PREFIX)) {
                         localStorage.removeItem(key);
                     }
                 });
-                // Try saving again once
                 localStorage.setItem(cacheKey, JSON.stringify({
                     timestamp: Date.now(),
                     data: result
@@ -210,6 +222,32 @@ export const fetchAdvancedReleases = async (token: string, options: AdvancedFetc
     }
 
     return result;
+};
+
+// Generalized search function for direct queries
+export const searchItems = async (token: string, query: string, type: 'albums' | 'tracks', genre?: string, limit = 50, offset = 0): Promise<any[]> => {
+    try {
+        let q = query;
+        if (genre) {
+            q += ` genre:"${genre}"`;
+        }
+        
+        // Map internal types to Spotify API types
+        const spotifyType = type === 'albums' ? 'album' : 'track';
+        
+        const res = await fetch(`${SPOTIFY_API_BASE}/search?q=${encodeURIComponent(q)}&type=${spotifyType}&market=BR&limit=${limit}&offset=${offset}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (!res.ok) throw new Error('Falha na busca');
+        const data = await res.json();
+        
+        return type === 'albums' ? data.albums.items : data.tracks.items;
+    } catch (e) {
+        console.error("Search API Error:", e);
+        if (token.startsWith('mock')) return type === 'albums' ? getMockReleases() : getMockTracks();
+        return [];
+    }
 };
 
 export const fetchUserProfile = async (token: string): Promise<User> => {
@@ -250,9 +288,6 @@ export const searchNewTracks = async (token: string, genre: string = '', limit =
         const years = getSearchYears();
         let query = `year:${years}`;
         
-        // Remove legacy tag:new which is unreliable. 
-        // Searching by current year is the best way to get "recent" tracks via Search API.
-        
         if (genre) {
             query += ` genre:"${genre}"`;
         }
@@ -273,7 +308,6 @@ export const searchNewTracks = async (token: string, genre: string = '', limit =
 
 export const searchByGenre = async (token: string, genre: string, type: 'album' | 'track' = 'album', limit = 50, offset = 0): Promise<any[]> => {
   try {
-    // Inject year filter to ensure we get RECENT items for the genre, not just all-time hits
     const years = getSearchYears();
     const query = `genre:"${genre}" year:${years}`;
     

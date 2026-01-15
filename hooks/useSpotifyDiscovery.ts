@@ -18,21 +18,19 @@ export const useSpotifyDiscovery = (token: string | null, filters: FilterState):
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
-  // Reset list when core filters change
+  // Reset list when core filters change (Content Type, Genre, or Search Query)
   useEffect(() => {
     if (token) {
         reset();
     }
-  }, [filters.contentType, filters.genre, token]);
+  }, [filters.contentType, filters.genre, filters.search, token]);
 
   // Effect to load initial data after reset or filter change
-  // We use a separate effect or call it directly. 
-  // To avoid race conditions with strict mode, we simply rely on the reset + deps.
   useEffect(() => {
     if (token && data.length === 0 && !loading && hasMore) {
         loadReleases(0, true);
     }
-  }, [token, filters, data.length]); // Dependencies carefully chosen to trigger only when needed
+  }, [token, filters, data.length]);
 
   const reset = () => {
       setData([]);
@@ -51,15 +49,10 @@ export const useSpotifyDiscovery = (token: string | null, filters: FilterState):
         offset: currentOffset,
         limit: 50,
         type: filters.contentType,
-        genre: filters.genre
+        genre: filters.genre,
+        query: filters.search // Pass the search query
       });
 
-      // Note: Filtering by date is often better done client-side for 'New Releases' 
-      // because the API doesn't support date params for that endpoint.
-      // However, here we assume fetchAdvancedReleases returns the raw batch 
-      // and we filter in the component, OR fetchAdvancedReleases handles it.
-      // Based on the hook design, we just append data here.
-      
       setData(prev => isReset ? result.items : [...prev, ...result.items]);
       setHasMore(result.hasMore);
       setOffset(result.nextOffset);
@@ -69,7 +62,7 @@ export const useSpotifyDiscovery = (token: string | null, filters: FilterState):
     } finally {
       setLoading(false);
     }
-  }, [token, filters.contentType, filters.genre]);
+  }, [token, filters.contentType, filters.genre, filters.search]);
 
   const loadMore = () => {
     if (hasMore && !loading) {
