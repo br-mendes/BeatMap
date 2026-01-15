@@ -376,6 +376,25 @@ export const createPlaylist = async (token: string, userId: string, name: string
   }
 };
 
+export const uploadPlaylistCoverImage = async (token: string, playlistId: string, imageBase64: string): Promise<void> => {
+    if (playlistId.startsWith('mock-')) return;
+    try {
+        // Spotify API expects raw base64 without the data URI prefix
+        const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+        
+        await fetch(`${SPOTIFY_API_BASE}/playlists/${playlistId}/images`, {
+            method: 'PUT',
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'image/jpeg'
+            },
+            body: cleanBase64
+        });
+    } catch (e) {
+        console.error("Error uploading cover image:", e);
+    }
+};
+
 export const addTracksToPlaylist = async (token: string, playlistId: string, uris: string[]): Promise<void> => {
   if (!playlistId.startsWith('mock-') && uris.length > 0) {
       const chunks = [];

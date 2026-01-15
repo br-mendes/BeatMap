@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Sparkles, Calendar, Play, Pause, ThumbsUp, ThumbsDown, Heart, CheckCircle, RefreshCw } from 'lucide-react';
 import { WeeklyDiscovery, RecommendedTrack } from '../types';
 import { getWeeklyDiscovery, updateDiscoveryFeedback, markDiscoverySaved, savePlaylistToDb } from '../lib/db';
-import { createPlaylist, addTracksToPlaylist } from '../lib/spotify';
+import { createPlaylist, addTracksToPlaylist, uploadPlaylistCoverImage } from '../lib/spotify';
 import { SocialShare } from '../components/SocialShare';
 
 interface DiscoveryProps {
@@ -66,6 +66,54 @@ export const Discovery: React.FC<DiscoveryProps> = ({ token, userId, supabaseUse
         }
     };
 
+    const generateCoverImage = (weekId: string): string => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 640;
+        canvas.height = 640;
+        const ctx = canvas.getContext('2d');
+        if(!ctx) return '';
+
+        // Gradient Background
+        const gradient = ctx.createLinearGradient(0, 0, 640, 640);
+        gradient.addColorStop(0, '#4f46e5'); // Indigo-600
+        gradient.addColorStop(0.5, '#7c3aed'); // Violet-600
+        gradient.addColorStop(1, '#0f172a'); // Slate-900
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 640, 640);
+
+        // Overlay pattern
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+        for(let i=0; i<640; i+=20) {
+            for(let j=0; j<640; j+=20) {
+                if((i+j)%40 === 0) ctx.fillRect(i, j, 4, 4);
+            }
+        }
+
+        // Text Branding
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Logo
+        ctx.font = 'bold 80px Inter, sans-serif';
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 20;
+        ctx.fillText('BeatMap', 320, 240);
+
+        // Subtitle
+        ctx.font = 'bold 40px Inter, sans-serif';
+        ctx.fillStyle = '#e0e7ff';
+        ctx.fillText('DESCOBERTA', 320, 340);
+        ctx.fillText('SEMANAL', 320, 390);
+
+        // Week ID
+        ctx.font = 'normal 30px Inter, sans-serif';
+        ctx.fillStyle = '#a5b4fc';
+        ctx.fillText(weekId, 320, 500);
+
+        return canvas.toDataURL('image/jpeg', 0.8);
+    };
+
     const handleSavePlaylist = async () => {
         if (!token || !userId || !discovery || saving) return;
         setSaving(true);
@@ -74,12 +122,24 @@ export const Discovery: React.FC<DiscoveryProps> = ({ token, userId, supabaseUse
             const name = `Descoberta Semanal BeatMap - ${date}`;
             const uris = discovery.tracks.map(t => t.uri);
             
+            // 1. Create Playlist
             const playlist = await createPlaylist(token, userId, name, 'Sua seleção personalizada semanal do BeatMap.');
+            
+            // 2. Generate and Upload Cover Image
+            try {
+                const base64Cover = generateCoverImage(discovery.weekId);
+                await uploadPlaylistCoverImage(token, playlist.id, base64Cover);
+            } catch (imgError) {
+                console.warn("Could not upload cover image", imgError);
+            }
+
+            // 3. Add Tracks
             await addTracksToPlaylist(token, playlist.id, uris);
             
             const playlistUrl = playlist.external_urls?.spotify || `https://open.spotify.com/playlist/${playlist.id}`;
             setSavedPlaylistUrl(playlistUrl);
 
+            // 4. Update Database
             if (supabaseUserId) {
                 await markDiscoverySaved(userId, discovery.weekId);
                 const pseudoAlbums = discovery.tracks.map(t => t.album).filter(Boolean) as any[];
