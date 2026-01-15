@@ -1,5 +1,5 @@
 import React from 'react';
-import { Disc, History, LayoutDashboard, BarChart2, Settings, Sparkles } from 'lucide-react';
+import { Disc, History, LayoutDashboard, BarChart2, Settings, Sparkles, LogOut } from 'lucide-react';
 import { Navbar } from './Navbar';
 import { User } from '../types';
 import { useLayout } from '../contexts/LayoutContext';
@@ -54,6 +54,14 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, active
             <div className="px-3 pb-4">
                 <div className="h-px bg-beatmap-border/10 mb-4 mx-2"></div>
                 <NavItem id="settings" icon={Settings} label="Configurações" />
+                
+                <button
+                  onClick={onLogout}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-beatmap-muted hover:text-red-400 hover:bg-red-500/10 group mt-1"
+                >
+                  <LogOut size={20} className="group-hover:text-red-400" />
+                  <span className="font-medium">Sair</span>
+                </button>
             </div>
             
             <div className="p-4 border-t border-beatmap-border/10">
