@@ -2,6 +2,15 @@ import { Album, Artist, Track, User, TopArtistData } from '../types';
 
 const SPOTIFY_API_BASE = 'https://api.spotify.com/v1';
 
+// --- CACHE CONFIGURATION ---
+const CACHE_PREFIX = 'beatmap_v1_';
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutes in milliseconds
+
+// Helper to generate cache keys based on request parameters
+const getCacheKey = (type: string, genre: string, offset: number, limit: number) => {
+  return `${CACHE_PREFIX}${type}_${genre || 'all'}_${limit}_${offset}`;
+};
+
 // --- MOCK DATA GENERATORS ---
 const mockImages = [
   "https://images.unsplash.com/photo-1493225255756-d9584f8606e9?w=300&h=300&fit=crop",
@@ -124,9 +133,33 @@ export interface AdvancedFetchOptions {
     limit: number;
     type: 'albums' | 'tracks';
     genre?: string;
+    bypassCache?: boolean;
 }
 
 export const fetchAdvancedReleases = async (token: string, options: AdvancedFetchOptions) => {
+    // 1. Check Cache
+    const cacheKey = getCacheKey(options.type, options.genre || '', options.offset, options.limit);
+    
+    if (!options.bypassCache) {
+        try {
+            const cachedRaw = sessionStorage.getItem(cacheKey);
+            if (cachedRaw) {
+                const { timestamp, data } = JSON.parse(cachedRaw);
+                // Validate TTL
+                if (Date.now() - timestamp < CACHE_TTL) {
+                    // console.debug(`[Cache Hit] Serving ${options.type} offset=${options.offset}`);
+                    return data; // Return cached structure
+                } else {
+                    // Expired
+                    sessionStorage.removeItem(cacheKey);
+                }
+            }
+        } catch (e) {
+            console.warn('Error reading from cache', e);
+        }
+    }
+
+    // 2. Fetch from API if not cached
     let items: any[] = [];
     
     if (options.type === 'albums') {
@@ -143,11 +176,40 @@ export const fetchAdvancedReleases = async (token: string, options: AdvancedFetc
         }
     }
 
-    return {
+    const result = {
         items: items || [],
         hasMore: items ? items.length === options.limit : false,
         nextOffset: options.offset + options.limit
     };
+
+    // 3. Save to Cache
+    // Only cache if we got results
+    if (items && items.length > 0) {
+        try {
+            sessionStorage.setItem(cacheKey, JSON.stringify({
+                timestamp: Date.now(),
+                data: result
+            }));
+        } catch (e) {
+            // If storage is full, clear old BeatMap entries
+            try {
+                Object.keys(sessionStorage).forEach(key => {
+                    if (key.startsWith(CACHE_PREFIX)) {
+                        sessionStorage.removeItem(key);
+                    }
+                });
+                // Try saving again once
+                sessionStorage.setItem(cacheKey, JSON.stringify({
+                    timestamp: Date.now(),
+                    data: result
+                }));
+            } catch (retryError) {
+                console.warn('SessionStorage quota exceeded, caching disabled for this session.');
+            }
+        }
+    }
+
+    return result;
 };
 
 export const fetchUserProfile = async (token: string): Promise<User> => {
