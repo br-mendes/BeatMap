@@ -120,7 +120,7 @@ export const filterReleasesByDate = (items: (Album | Track)[], range: 'day' | 'w
 // Helper to get current relevant years for search context
 const getSearchYears = () => {
     const currentYear = new Date().getFullYear();
-    // Strictly return current year to ensure freshness when filters are removed
+    // Strictly return current year (e.g., 2026) to ensure freshness
     return `${currentYear}`;
 };
 
@@ -267,12 +267,18 @@ export const fetchUserProfile = async (token: string): Promise<User> => {
 
 export const fetchNewReleases = async (token: string, limit = 50, offset = 0): Promise<Album[]> => {
   try {
+    // Note: The browse/new-releases endpoint often returns items from late previous year.
+    // We must manually filter them to strict current year compliance.
     const res = await fetch(`${SPOTIFY_API_BASE}/browse/new-releases?country=BR&limit=${limit}&offset=${offset}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) throw new Error('Falha ao buscar lançamentos');
     const data = await res.json();
-    return data.albums.items;
+    const items = data.albums.items as Album[];
+
+    // Strict Filter for Current Year
+    const currentYear = getSearchYears();
+    return items.filter(item => item.release_date && item.release_date.startsWith(currentYear));
   } catch (e) {
     console.warn("API Error, returning mock data", e);
     return getMockReleases();
