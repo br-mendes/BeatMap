@@ -27,7 +27,6 @@ function App() {
   const [view, setView] = useState('login'); 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [history, setHistory] = useState<HistoryItem[]>([]);
-  const [isDemo, setIsDemo] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
   useLayoutEffect(() => {
@@ -83,35 +82,20 @@ function App() {
         setToken(session.provider_token || null);
         setView('dashboard');
         setLoginError(null); 
-      } else if (!isDemo) {
+      } else {
         setView('login');
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [isDemo]);
+  }, []);
 
   useEffect(() => {
     if (token && session?.user?.id) {
       fetchUserProfile(token).then(profile => setUser(profile));
       loadHistory(session.user.id);
-    } else if (isDemo) {
-      setUser({
-        id: 'demo-user',
-        display_name: 'Usuário Convidado',
-        email: 'demo@beatmap.com',
-        product: 'free',
-        images: [{ url: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=100&q=80' }]
-      });
-      setHistory([{
-        id: 'demo-1',
-        playlistName: 'Demo Playlist',
-        trackCount: 15,
-        createdAt: new Date().toISOString(),
-        spotifyUrl: '#'
-      }]);
     }
-  }, [token, isDemo, session]);
+  }, [token, session]);
 
   const loadHistory = async (userId: string) => {
     const data = await getUserHistory(userId);
@@ -134,18 +118,8 @@ function App() {
     }
   };
 
-  const handleDemo = () => {
-    setIsDemo(true);
-    setLoginError(null);
-    setToken('mock-token'); 
-    setView('dashboard');
-  };
-
   const handleLogout = async () => {
-    if (!isDemo) {
-      await supabase.auth.signOut();
-    }
-    setIsDemo(false);
+    await supabase.auth.signOut();
     setUser(null);
     setToken(null);
     setView('login');
@@ -154,23 +128,10 @@ function App() {
   const handleRefreshHistory = () => {
     if (session?.user?.id) {
       loadHistory(session.user.id);
-    } else if (isDemo) {
-      setHistory(prev => [{
-        id: Math.random().toString(),
-        playlistName: 'Nova Playlist Demo',
-        trackCount: 10,
-        createdAt: new Date().toISOString(),
-        spotifyUrl: '#'
-      }, ...prev]);
     }
   };
 
   const handleDeletePlaylist = async (id: string) => {
-    if (isDemo) {
-      setHistory(prev => prev.filter(item => item.id !== id));
-      return;
-    }
-
     if (window.confirm('Tem certeza que deseja remover este item do histórico?')) {
       try {
         await deletePlaylist(id);
@@ -184,7 +145,7 @@ function App() {
   };
 
   if (view === 'login') {
-    return <Login onLogin={handleLogin} onDemo={handleDemo} error={loginError} />;
+    return <Login onLogin={handleLogin} error={loginError} />;
   }
 
   return (
