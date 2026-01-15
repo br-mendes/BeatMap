@@ -76,13 +76,19 @@ export const Settings: React.FC = () => {
            </div>
         </div>
         
-        <div className="flex justify-end">
+        <div className="flex justify-end sticky bottom-6 z-20">
             <button 
                 onClick={handleSave}
-                className="bg-beatmap-text text-beatmap-bg hover:opacity-90 px-8 py-3 rounded-full font-bold flex items-center gap-2 transition-all active:scale-95 shadow-lg"
+                className={`
+                    px-8 py-3 rounded-full font-bold flex items-center gap-2 transition-all duration-300 border
+                    ${saved 
+                        ? 'bg-green-500 text-white border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.5)] scale-105' 
+                        : 'bg-beatmap-primary text-white border-beatmap-primary shadow-[0_0_20px_rgba(139,92,246,0.4)] hover:shadow-[0_0_30px_rgba(139,92,246,0.6)] hover:scale-105 active:scale-95'
+                    }
+                `}
             >
-                {saved ? <CheckCircle size={20} className="text-green-600" /> : <Save size={20} />}
-                {saved ? 'Salvo!' : 'Salvar Alterações'}
+                {saved ? <CheckCircle size={20} className="text-white" /> : <Save size={20} />}
+                {saved ? 'Salvo com sucesso!' : 'Salvar Alterações'}
             </button>
         </div>
 
