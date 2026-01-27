@@ -243,6 +243,7 @@ const saveToCache = (cacheKey: string, data: any) => {
 };
 
 // --- MOCK DATA GENERATORS ---
+
 const mockImages = [
   "https://images.unsplash.com/photo-1493225255756-d9584f8606e9?w=300&h=300&fit=crop",
   "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&h=300&fit=crop",
@@ -295,7 +296,7 @@ export const getMockTracks = (): Track[] => {
         uri: `spotify:track:mock-${i}`,
         external_urls: { spotify: '#' }
     }));
-}
+};
 
 // --- HELPER FUNCTIONS ---
 
@@ -319,7 +320,6 @@ export const isDateInInterval = (
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     if (range === 'day') {
-        // Allow up to 2 days to account for timezone differences in releases
         return diffDays <= 2; 
     }
     if (range === 'week') {
@@ -336,7 +336,6 @@ export const isDateInInterval = (
     return true;
 };
 
-// Alias for compatibility with new hook patterns
 export const filterReleasesByDate = (items: (Album | Track)[], range: 'day' | 'week' | 'month' | 'custom', start?: string, end?: string) => {
     return items.filter(item => {
         const dateString = 'release_date' in item 
@@ -346,10 +345,8 @@ export const filterReleasesByDate = (items: (Album | Track)[], range: 'day' | 'w
     });
 };
 
-// Helper to get current relevant years for search context
 const getSearchYears = () => {
     const currentYear = new Date().getFullYear();
-    // Enforce 2026 as current year if system time is lagging, ensuring strict forward-looking discovery
     const effectiveYear = Math.max(currentYear, 2026);
     return `${effectiveYear}`;
 };
@@ -361,7 +358,7 @@ export interface AdvancedFetchOptions {
     limit: number;
     type: 'albums' | 'tracks';
     genre?: string;
-    query?: string; // New field for search
+    query?: string;
     bypassCache?: boolean;
 }
 
@@ -794,4 +791,4 @@ export const getRateLimitStatus = () => {
     windowMs: RATE_LIMIT_WINDOW,
     resetTime: rateLimitResetTime
   };
-};;
+};
