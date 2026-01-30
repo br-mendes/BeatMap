@@ -224,8 +224,9 @@ export class ConsoleErrorHandler implements ErrorHandler {
 export class AnalyticsErrorHandler implements ErrorHandler {
   handle(error: ApiError): void {
     // Send error to analytics service
-    if (typeof gtag !== 'undefined') {
-      gtag('event', 'exception', {
+    const gtagFn = (globalThis as any)?.gtag;
+    if (typeof gtagFn === 'function') {
+      gtagFn('event', 'exception', {
         description: error.message,
         fatal: error.severity === ErrorSeverity.CRITICAL
       });
@@ -236,7 +237,7 @@ export class AnalyticsErrorHandler implements ErrorHandler {
 export const errorManager = new ErrorManager();
 
 // Register default handlers
-if (import.meta.env.PROD) {
+if (process.env.NODE_ENV === 'production') {
   errorManager.registerHandler(new ConsoleErrorHandler());
 }
 
