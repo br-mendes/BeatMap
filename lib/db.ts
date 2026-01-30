@@ -56,6 +56,9 @@ export const savePlaylistToDb = async (
       throw playlistError || new Error('Failed to create DB playlist');
     }
 
+    const typedPlaylistData = playlistData as any;
+    const playlistId = typedPlaylistData.id;
+
     // 2. Prepare Tracks
     const tracksToInsert: DbPlaylistTrack[] = [];
     
@@ -63,7 +66,7 @@ export const savePlaylistToDb = async (
       if (album.tracks?.items) {
         album.tracks.items.forEach(track => {
           tracksToInsert.push({
-            playlist_id: playlistData.id,
+            playlist_id: playlistId,
             spotify_track_id: track.id,
             track_name: track.name,
             artist_name: track.artists.map(a => a.name).join(', '),
