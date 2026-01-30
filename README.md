@@ -160,7 +160,7 @@ Esta aplicação foi migrada de Vite/React para Next.js:
 ### Mudanças Principais
 - **Routing**: Sistema de arquivo do Next.js App Router
 - **Variáveis de ambiente**: Prefixo `NEXT_PUBLIC_` para variáveis públicas
-- **Auth**: `@supabase/auth-helpers-nextjs` para SSR/CSR
+- **Auth**: `@supabase/ssr` para SSR/CSR
 - **Middleware**: Proteção de rotas via `middleware.ts`
 
 ## 📚 Documentação
