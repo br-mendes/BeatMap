@@ -1,9 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
 import { env } from './env'
 
-let supabaseInstance: ReturnType<typeof createClient> | null = null
+// NOTE: This project does not ship generated Supabase Database types.
+// Without those generics, supabase-js may infer table rows as `never` and
+// break TypeScript builds in Next.js. We intentionally type the client as `any`
+// to keep the app building until proper generated types are introduced.
+let supabaseInstance: any | null = null
 
-export function getSupabaseClient() {
+export function getSupabaseClient(): any {
   if (!supabaseInstance) {
     const config = env.getConfig()
     
@@ -27,7 +31,7 @@ export function getSupabaseClient() {
   return supabaseInstance
 }
 
-export const supabase = getSupabaseClient()
+export const supabase: any = getSupabaseClient()
 
 export const spotifyConfig = {
   get clientId(): string {
