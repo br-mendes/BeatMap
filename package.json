@@ -12,7 +12,7 @@
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.47.0",
     "lucide-react": "^0.460.0",
-    "next": "^15.1.11",
+    "next": "15.5.11",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "recharts": "^2.15.0"
@@ -22,7 +22,7 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "eslint": "^9.17.0",
-    "eslint-config-next": "15.1.11",
+    "eslint-config-next": "15.5.11",
     "typescript": "^5.7.0"
   }
 }

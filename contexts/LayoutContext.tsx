@@ -52,7 +52,7 @@ export const LayoutProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
         if (session?.user) {
             setUserId(session.user.id);
             fetchRemoteSettings(session.user.id);
