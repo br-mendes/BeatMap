@@ -2,12 +2,12 @@
   min-height: 100vh;
   background: radial-gradient(1200px 800px at 20% 10%, rgba(29, 185, 84, 0.18), transparent 55%),
     radial-gradient(1000px 700px at 80% 80%, rgba(30, 215, 96, 0.16), transparent 55%),
-    var(--beatmap-bg);
-  color: var(--beatmap-text);
+    var(--color-background);
+  color: var(--color-text);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 28px 18px;
+  padding: var(--space-6);
 }
 
 .card {
@@ -17,11 +17,11 @@
 }
 
 .title {
-  font-size: 34px;
+  font-size: 2.125rem;
   line-height: 1.05;
   font-weight: 900;
   letter-spacing: -0.03em;
-  margin: 18px 0 10px;
+  margin: var(--space-4) 0 var(--space-2);
 }
 
 .titleAccent {
@@ -32,27 +32,27 @@
 }
 
 .subtitle {
-  color: var(--beatmap-muted);
-  font-size: 16px;
+  color: var(--color-muted);
+  font-size: var(--font-size-base);
   line-height: 1.55;
-  margin: 0 auto 18px;
+  margin: 0 auto var(--space-4);
 }
 
 .button {
   width: 100%;
-  border: 0;
+  border: none;
   cursor: pointer;
-  background: #1db954;
-  color: #0b0b0f;
+  background: var(--color-primary);
+  color: var(--color-background);
   font-weight: 800;
-  padding: 14px 18px;
-  border-radius: 999px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-full);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 14px 40px rgba(29, 185, 84, 0.25);
-  transition: transform 160ms ease, filter 160ms ease;
+  gap: var(--space-2);
+  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  transition: transform var(--transition-fast), filter var(--transition-fast);
 }
 
 .button:hover {
@@ -67,9 +67,9 @@
 }
 
 .finePrint {
-  margin-top: 14px;
-  font-size: 12px;
-  color: var(--beatmap-muted);
+  margin-top: var(--space-3);
+  font-size: var(--font-size-xs);
+  color: var(--color-muted);
 }
 
 .spotifyIcon {
@@ -79,10 +79,10 @@
 
 @media (min-width: 768px) {
   .title {
-    font-size: 40px;
+    font-size: 2.5rem;
   }
 
   .subtitle {
-    font-size: 17px;
+    font-size: var(--font-size-lg);
   }
 }

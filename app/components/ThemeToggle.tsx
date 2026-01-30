@@ -19,8 +19,16 @@ export default function ThemeToggle(): JSX.Element {
   };
 
   return (
-    <button className="btn theme-toggle" onClick={toggle} aria-label="Toggle theme" title="Toggle theme">
-      {theme === 'dark' ? '☀' : '☾'}
+    <button 
+      type="button"
+      className="btn-icon btn-square theme-toggle" 
+      onClick={toggle} 
+      aria-label="Toggle theme" 
+      title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+    >
+      <span className="text-xl" role="img" aria-hidden="true">
+        {theme === 'dark' ? '☀' : '☾'}
+      </span>
     </button>
   );
 }
