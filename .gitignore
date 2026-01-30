@@ -97,7 +97,8 @@ dist
 .next/
 out/
 
-# Local env files
+# Local env files - KEEP SECRET
+.env.local
 .env*.local
 
 # TypeScript
