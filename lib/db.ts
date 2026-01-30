@@ -84,7 +84,7 @@ export const savePlaylistToDb = async (
     if (tracksToInsert.length > 0) {
       const { error: tracksError } = await supabase
         .from('playlist_tracks')
-        .insert(tracksToInsert);
+        .insert(tracksToInsert as any);
       
       if (tracksError) console.error('Error inserting tracks:', tracksError);
     }
