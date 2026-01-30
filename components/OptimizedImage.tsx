@@ -1,3 +1,5 @@
+ 'use client'
+
 import React, { useState } from 'react';
 
 interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {

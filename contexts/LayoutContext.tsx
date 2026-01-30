@@ -1,3 +1,5 @@
+ 'use client'
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { LayoutSettings, LayoutMode, AppFontSize, AppDensity, SidebarPosition } from '../types';
 import { supabase } from '../lib/supabase';

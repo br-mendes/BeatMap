@@ -1,3 +1,5 @@
+ 'use client'
+
 import React, { useState, useEffect } from 'react';
 import { Palette, Share2, Download, Plus, Trash2 } from 'lucide-react';
 import { THEMES, applyTheme, getSavedTheme, saveTheme, exportTheme, importTheme } from '../../lib/theme';

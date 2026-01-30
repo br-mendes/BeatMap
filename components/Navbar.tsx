@@ -1,3 +1,5 @@
+ 'use client'
+
 import React from 'react';
 import { User } from '../types';
 import { BeatMapLogo } from './BeatMapLogo';

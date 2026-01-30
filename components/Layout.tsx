@@ -1,3 +1,5 @@
+ 'use client'
+
 import React from 'react';
 import { Disc, History, LayoutDashboard, BarChart2, Settings, Sparkles, LogOut } from 'lucide-react';
 import { Navbar } from './Navbar';

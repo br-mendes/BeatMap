@@ -3,6 +3,8 @@
  * Catches and handles errors in React components gracefully
  */
 
+'use client'
+
 import React, { Component, ReactNode } from 'react';
 import { errorManager, ErrorType, ErrorSeverity } from '../lib/errorHandler';
 

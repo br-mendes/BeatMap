@@ -1,3 +1,5 @@
+ 'use client'
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, Check, Trash2, X } from 'lucide-react';
 import { Notification } from '../types';

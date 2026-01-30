@@ -1,3 +1,5 @@
+ 'use client'
+
 import React, { useState } from 'react';
 import { Layout, Type, Sidebar, Monitor } from 'lucide-react';
 import { useLayout } from '../../contexts/LayoutContext';
