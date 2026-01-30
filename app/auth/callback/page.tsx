@@ -10,14 +10,44 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const handleAuthCallback = async () => {
-      const code = new URLSearchParams(window.location.search).get('code')
-      const { error } = code ? await supabase.auth.exchangeCodeForSession(code) : { error: null }
-      
-      if (error) {
-        console.error('Error exchanging code for session:', error)
-        router.push('/?error=auth_failed')
-      } else {
-        router.push('/dashboard')
+      const params = new URLSearchParams(window.location.search)
+
+      const providerError = params.get('error')
+      const providerErrorDescription = params.get('error_description')
+      if (providerError) {
+        const msg = providerErrorDescription || providerError
+        console.error('OAuth provider error:', msg)
+        router.replace(`/?error=auth_failed&message=${encodeURIComponent(msg)}`)
+        return
+      }
+
+      const code = params.get('code')
+      if (!code) {
+        console.error('OAuth callback missing code')
+        router.replace('/?error=auth_failed&message=missing_code')
+        return
+      }
+
+      try {
+        const { error } = await supabase.auth.exchangeCodeForSession(code)
+        if (error) {
+          console.error('Error exchanging code for session:', error)
+          router.replace(`/?error=auth_failed&message=${encodeURIComponent(error.message)}`)
+          return
+        }
+
+        // sanity check
+        const { data } = await supabase.auth.getSession()
+        if (!data?.session) {
+          console.error('Session not found after code exchange')
+          router.replace('/?error=auth_failed&message=session_missing')
+          return
+        }
+
+        router.replace('/dashboard')
+      } catch (e) {
+        console.error('Auth callback unexpected error:', e)
+        router.replace('/?error=auth_failed&message=unexpected')
       }
     }
 
