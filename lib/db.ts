@@ -231,13 +231,23 @@ export const getUserStatistics = async (userId: string): Promise<UserStats> => {
 
 // --- PREFERENCES & SETTINGS ---
 
-export const getUserPreferences = async (userId: string) => {
+export interface UserPreferencesData {
+    user_id: string;
+    theme_id?: string;
+    custom_theme_data?: any;
+    layout_settings?: LayoutSettings;
+    notification_settings?: UserSettings;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export const getUserPreferences = async (userId: string): Promise<UserPreferencesData | null> => {
     const { data } = await supabase
         .from('user_preferences')
         .select('*')
         .eq('user_id', userId)
         .single();
-    return data;
+    return data as UserPreferencesData | null;
 };
 
 export const saveUserPreferences = async (
