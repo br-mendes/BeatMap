@@ -48,7 +48,7 @@ export const savePlaylistToDb = async (
         user_id: userId,
         name: playlistName,
         spotify_playlist_id: spotifyPlaylistId
-      })
+      } as any)
       .select()
       .single();
 
