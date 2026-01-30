@@ -1,0 +1,82 @@
+.wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  user-select: none;
+}
+
+.mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.glow {
+  position: absolute;
+  inset: -18px;
+  background: radial-gradient(circle at 50% 50%, rgba(29, 185, 84, 0.35), transparent 65%);
+  filter: blur(14px);
+}
+
+.tile {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 22px;
+  background: linear-gradient(135deg, var(--beatmap-primary), #8b5cf6, var(--beatmap-secondary));
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.16;
+  background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.9) 1px, transparent 0);
+  background-size: 6px 6px;
+}
+
+.shine {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  transform: rotate(45deg);
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.12), transparent);
+  pointer-events: none;
+}
+
+.icon {
+  position: relative;
+  width: 64%;
+  height: 64%;
+  filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.45));
+}
+
+.word {
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  color: #fff;
+  line-height: 1;
+}
+
+.wordAccent {
+  background: linear-gradient(90deg, var(--beatmap-primary), var(--beatmap-secondary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.sm { width: 32px; height: 32px; }
+.md { width: 40px; height: 40px; }
+.lg { width: 80px; height: 80px; }
+.xl { width: 112px; height: 112px; }
+
+.textSm { font-size: 18px; }
+.textMd { font-size: 26px; }
+.textLg { font-size: 48px; }
+.textXl { font-size: 60px; }

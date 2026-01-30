@@ -10,7 +10,8 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const handleAuthCallback = async () => {
-      const { error } = await supabase.auth.exchangeCodeForSession(window.location.hash)
+      const code = new URLSearchParams(window.location.search).get('code')
+      const { error } = code ? await supabase.auth.exchangeCodeForSession(code) : { error: null }
       
       if (error) {
         console.error('Error exchanging code for session:', error)
