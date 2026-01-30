@@ -22,7 +22,8 @@ export const ThemeEditorPanel: React.FC = () => {
     setCurrentTheme(saved);
 
     // 2. Get User ID and Load DB Themes
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then((res: any) => {
+        const session = res?.data?.session;
         if (session?.user) {
             setUserId(session.user.id);
             loadDbThemes(session.user.id);

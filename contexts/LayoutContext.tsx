@@ -44,7 +44,8 @@ export const LayoutProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     // 3. Listen for Auth to Sync DB
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then((res: any) => {
+        const session = res?.data?.session;
         if (session?.user) {
             setUserId(session.user.id);
             fetchRemoteSettings(session.user.id);
