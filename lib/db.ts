@@ -137,11 +137,13 @@ const calculateUserStatistics = async (userId: string): Promise<UserStats> => {
         .select('id, created_at')
         .eq('user_id', userId);
     
-    if (!playlists) return {
+    const playlistRows: any[] = (playlists as any[]) || [];
+
+    if (playlistRows.length === 0) return {
         totalPlaylists: 0, totalTracksSaved: 0, totalTimeMs: 0, uniqueArtists: 0, topGenres: [], activityByMonth: []
     };
 
-    const playlistIds = playlists.map(p => p.id);
+    const playlistIds = playlistRows.map((p: any) => p.id);
     
     let tracks: any[] = [];
     if (playlistIds.length > 0) {
@@ -152,13 +154,13 @@ const calculateUserStatistics = async (userId: string): Promise<UserStats> => {
         tracks = tData || [];
     }
 
-    const totalPlaylists = playlists.length;
+    const totalPlaylists = playlistRows.length;
     const totalTracksSaved = tracks.length;
-    const totalTimeMs = tracks.reduce((acc, curr) => acc + curr.duration_ms, 0);
-    const uniqueArtists = new Set(tracks.map(t => t.artist_name)).size;
+    const totalTimeMs = tracks.reduce((acc: number, curr: any) => acc + curr.duration_ms, 0);
+    const uniqueArtists = new Set(tracks.map((t: any) => t.artist_name)).size;
 
     const genreCounts: Record<string, number> = {};
-    tracks.forEach(t => {
+    tracks.forEach((t: any) => {
         if (t.genre) genreCounts[t.genre] = (genreCounts[t.genre] || 0) + 1;
     });
 
@@ -167,8 +169,8 @@ const calculateUserStatistics = async (userId: string): Promise<UserStats> => {
         .sort((a, b) => b.count - a.count)
         .slice(0, 10);
     
-    const totalGenreCount = Object.values(genreCounts).reduce((a, b) => a + b, 0);
-    topGenres.forEach(g => g.percent = Math.round((g.count / totalGenreCount) * 100));
+    const totalGenreCount = Object.values(genreCounts).reduce((a: number, b: number) => a + b, 0);
+    topGenres.forEach((g: any) => g.percent = Math.round((g.count / totalGenreCount) * 100));
 
     // Activity
     const activityMap: Record<string, { playlists: number, tracks: number }> = {};
@@ -179,13 +181,13 @@ const calculateUserStatistics = async (userId: string): Promise<UserStats> => {
             const key = `${months[d.getMonth()]}`;
             activityMap[key] = { playlists: 0, tracks: 0 };
     }
-    playlists.forEach(p => {
+    playlistRows.forEach((p: any) => {
         const d = new Date(p.created_at);
         const key = months[d.getMonth()];
         if (activityMap[key]) activityMap[key].playlists++;
     });
-    tracks.forEach(t => {
-        const playlist = playlists.find(p => p.id === t.playlist_id);
+    tracks.forEach((t: any) => {
+        const playlist = playlistRows.find((p: any) => p.id === t.playlist_id);
         if (playlist) {
             const d = new Date(playlist.created_at);
             const key = months[d.getMonth()];
@@ -281,7 +283,7 @@ export const getCustomThemes = async (userId: string): Promise<Theme[]> => {
     
     if (!data) return [];
     
-    return data.map(d => ({
+    return (data as any[]).map((d: any) => ({
         id: d.id,
         name: d.name,
         colors: d.colors,
@@ -349,7 +351,7 @@ export const getFollowedArtists = async (userId: string): Promise<string[]> => {
         .select('artist_id')
         .eq('user_id', userId);
     
-    return data?.map(d => d.artist_id) || [];
+    return (data as any[] | null | undefined)?.map((d: any) => d.artist_id) || [];
 };
 
 export const toggleFollowArtist = async (userId: string, artistId: string, artistName: string, imageUrl: string) => {
@@ -437,7 +439,7 @@ export const getWeeklyDiscovery = async (token: string, userId: string): Promise
         ? `Baseado em ${seedNames.join(', ')} e outros.`
         : `Baseado nas tendências de hoje.`;
 
-    const discoveryTracks = tracks.map(t => ({
+    const discoveryTracks = tracks.map((t: any) => ({
         ...t,
         reason: reasonText,
         feedback: null
@@ -486,7 +488,7 @@ export const updateDiscoveryFeedback = async (userId: string, weekId: string, tr
     
     if (!existing) return null;
 
-    const updatedTracks = (existing.tracks as RecommendedTrack[]).map(t => {
+    const updatedTracks = (existing.tracks as RecommendedTrack[]).map((t: any) => {
         if (t.id === trackId) {
             return { ...t, feedback: t.feedback === type ? null : type };
         }
