@@ -92,3 +92,14 @@ Thumbs.db
 
 # Vite build output
 dist
+
+# Next.js build output
+.next/
+out/
+
+# Local env files
+.env*.local
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts

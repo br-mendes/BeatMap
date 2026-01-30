@@ -1,103 +1,195 @@
+# BeatMap - Next.js Application
+
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+<img width="1200" height="475" alt="BeatMap Banner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# BeatMap - AI Studio Application
+Aplicação de descoberta musical integrada com Spotify API e Supabase. **Migrado de Vite para Next.js 15**.
 
-This contains everything you need to run your app locally with the enhanced API architecture.
+## 🚀 Tecnologias
 
-View your app in AI Studio: https://ai.studio/apps/drive/14eGOXHo2-C_JIK1KVvfJpcPHk46zTXIb
+- **Next.js 15** - Framework React com App Router
+- **TypeScript** - Tipagem estática
+- **Tailwind CSS** - Estilização utilitária
+- **Supabase** - Backend-as-a-Service com autenticação
+- **Spotify API** - Integração com Spotify
+- **Lucide React** - Ícones
 
-## Run Locally
+## 📁 Estrutura do Projeto
 
-**Prerequisites:** Node.js
-
-1. Install dependencies:
-   `npm install`
-2. Set the environment variables in [.env.local](.env.local):
-   - `GEMINI_API_KEY`: Your Gemini API key
-   - `API_SECRET_KEY`: Secret key for API authentication
-   - `DATABASE_URL`: Database connection string
-   - `CACHE_REDIS_URL`: Redis cache connection (optional)
-3. Run the app:
-   `npm run dev`
-
-## API Architecture
-
-### New Features
-- **Modular Architecture**: Separate service layers for better maintainability
-- **Enhanced Security**: JWT authentication, rate limiting, and input validation
-- **Improved Performance**: Caching layer and optimized database queries
-- **Error Handling**: Centralized error management with detailed logging
-- **Type Safety**: Full TypeScript integration with strict typing
-
-### Environment Variables
-
-Create a `.env.local` file with the following variables:
-
-```bash
-# Required
-GEMINI_API_KEY=your_gemini_api_key
-API_SECRET_KEY=your_secret_key_here
-DATABASE_URL=your_database_url
-
-# Optional
-CACHE_REDIS_URL=redis://localhost:6379
-LOG_LEVEL=info
-RATE_LIMIT_WINDOW_MS=900000
-RATE_LIMIT_MAX_REQUESTS=100
+```
+C:\BeatMap
+├── app/                    # App Router (Next.js 13+)
+│   ├── layout.tsx         # Layout principal
+│   ├── page.tsx           # Página inicial (login)
+│   ├── globals.css        # Estilos globais
+│   ├── providers.tsx      # Provedores de contexto (Auth)
+│   ├── auth/
+│   │   └── callback/
+│   │       └── page.tsx   # Callback OAuth
+│   └── dashboard/
+│       └── page.tsx       # Dashboard do usuário
+├── components/            # Componentes React
+│   ├── BeatMapLogo.tsx
+│   ├── LoginPage.tsx
+│   └── ...
+├── lib/                   # Bibliotecas e utilidades
+│   ├── env.ts            # Configuração de ambiente
+│   ├── supabase.ts       # Cliente Supabase
+│   └── ...
+├── types/                 # Definições de tipos TypeScript
+│   └── index.ts
+├── middleware.ts          # Middleware de autenticação
+├── next.config.js         # Configuração do Next.js
+├── package.json           # Dependências
+└── tsconfig.json          # Configuração TypeScript
 ```
 
-## Security Features
+## 🛠️ Instalação
 
-- **JWT Authentication**: Secure token-based authentication
-- **Rate Limiting**: Configurable request rate limits
-- **Input Validation**: Comprehensive request validation using schemas
-- **CORS Protection**: Configurable Cross-Origin Resource Sharing
-- **Security Headers**: Built-in security headers for enhanced protection
-- **Environment-based Configuration**: Secure configuration management
+### Pré-requisitos
+- Node.js 18+ 
+- npm ou yarn
 
-## Performance Improvements
+### Passos
 
-- **Caching Layer**: Redis-based caching for frequently accessed data
-- **Database Optimization**: Query optimization and connection pooling
-- **Response Compression**: Automatic gzip compression
-- **Lazy Loading**: Optimized bundle size with code splitting
-- **Memory Management**: Efficient memory usage patterns
+1. **Instalar dependências:**
+```bash
+npm install
+```
 
-## Error Handling
+2. **Configurar variáveis de ambiente:**
+Crie um arquivo `.env.local` na raiz do projeto:
 
-The application implements comprehensive error handling:
+```bash
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 
-- **Structured Error Responses**: Consistent error format across all endpoints
-- **Error Logging**: Detailed error tracking and monitoring
-- **Graceful Degradation**: Fallback mechanisms for critical operations
-- **Validation Errors**: Clear validation feedback with field-specific messages
+# Spotify Configuration
+NEXT_PUBLIC_SPOTIFY_CLIENT_ID=your-spotify-client-id
 
-## Documentation
+# Gemini API Configuration (Opcional)
+NEXT_PUBLIC_GEMINI_API_KEY=your-gemini-api-key
 
-- **[API Documentation](./API_DOCUMENTATION.md)**: Complete API reference with examples
-- **[Migration Guide](./MIGRATION_GUIDE.md)**: Step-by-step migration from previous versions
-- **[Environment Setup](./docs/ENVIRONMENT_SETUP.md)**: Detailed environment configuration
+# Application Configuration
+NEXT_PUBLIC_APP_NAME=BeatMap
+NEXT_PUBLIC_APP_VERSION=1.0.0
+NEXT_PUBLIC_API_BASE_URL=https://api.spotify.com/v1
 
-## Migration
+# Cache Configuration
+NEXT_PUBLIC_CACHE_TTL=1800000
+NEXT_PUBLIC_CACHE_PREFIX=beatmap_
 
-If upgrading from a previous version, please refer to the **[Migration Guide](./MIGRATION_GUIDE.md)** for detailed instructions on:
-- Database schema changes
-- Environment variable updates
-- Breaking changes in API endpoints
-- Configuration file updates
+# Feature Flags
+NEXT_PUBLIC_ENABLE_ANALYTICS=true
+NEXT_PUBLIC_ENABLE_NOTIFICATIONS=true
+NEXT_PUBLIC_ENABLE_DISCOVERY=true
+```
 
-## Development
+3. **Executar em desenvolvimento:**
+```bash
+npm run dev
+```
 
-- **Code Style**: ESLint and Prettier for consistent code formatting
-- **Type Checking**: Strict TypeScript configuration
-- **Testing**: Jest unit tests and integration tests
-- **Pre-commit Hooks**: Automated code quality checks
+Acesse em: http://localhost:3000
 
-## Support
+4. **Build para produção:**
+```bash
+npm run build
+npm start
+```
 
-For issues and questions:
-1. Check the [API Documentation](./API_DOCUMENTATION.md)
-2. Review the [Migration Guide](./MIGRATION_GUIDE.md)
-3. Open an issue in the project repository
+## 🔐 Autenticação
+
+A aplicação usa **Supabase Auth** com OAuth do Spotify:
+
+1. Usuário clica em "Entrar com Spotify"
+2. Redirecionado para autenticação OAuth do Spotify
+3. Após autenticação, redirecionado para `/auth/callback`
+4. Token armazenado em cookie seguro
+5. Usuário redirecionado para `/dashboard`
+
+## 🎵 Integrações
+
+### Spotify API
+- Autenticação OAuth 2.0
+- Busca de lançamentos
+- Criação de playlists
+- Upload de capas
+- Descoberta semanal
+
+### Supabase
+- Autenticação (OAuth Spotify)
+- Banco de dados PostgreSQL
+- Row Level Security (RLS)
+- Real-time subscriptions
+
+## 📋 Scripts Disponíveis
+
+- `npm run dev` - Inicia servidor de desenvolvimento
+- `npm run build` - Build para produção
+- `npm start` - Inicia servidor de produção
+- `npm run lint` - Executa ESLint
+
+## 🔧 Configuração de Deploy
+
+### Vercel (Recomendado)
+1. Conecte seu repositório GitHub
+2. Configure as variáveis de ambiente no dashboard
+3. Deploy automático a cada push
+
+### Outras Plataformas
+- Configure `NEXT_PUBLIC_*` variáveis no ambiente
+- Execute `npm run build`
+- Inicie com `npm start`
+
+## 📝 Migração de Vite para Next.js
+
+Esta aplicação foi migrada de Vite/React para Next.js:
+
+| Vite | Next.js |
+|------|---------|
+| `vite.config.ts` | `next.config.js` |
+| `index.html` | `app/layout.tsx` |
+| `src/App.tsx` | `app/page.tsx` |
+| `import.meta.env` | `process.env` |
+| `VITE_*` | `NEXT_PUBLIC_*` |
+| `main.tsx` | `app/layout.tsx` |
+
+### Mudanças Principais
+- **Routing**: Sistema de arquivo do Next.js App Router
+- **Variáveis de ambiente**: Prefixo `NEXT_PUBLIC_` para variáveis públicas
+- **Auth**: `@supabase/auth-helpers-nextjs` para SSR/CSR
+- **Middleware**: Proteção de rotas via `middleware.ts`
+
+## 📚 Documentação
+
+- [API Documentation](./API_DOCUMENTATION.md) - Documentação da API
+- [Migration Guide](./MIGRATION_GUIDE.md) - Guia de migração
+
+## 🔒 Segurança
+
+- Middleware de autenticação protege rotas privadas
+- Tokens armazenados em cookies HttpOnly
+- Row Level Security no Supabase
+- Input sanitization contra XSS/SQL injection
+- Rate limiting nas chamadas Spotify API
+
+## 🤝 Contribuição
+
+1. Faça fork do projeto
+2. Crie uma branch (`git checkout -b feature/nova-feature`)
+3. Commit suas mudanças (`git commit -m 'Adiciona nova feature'`)
+4. Push para a branch (`git push origin feature/nova-feature`)
+5. Abra um Pull Request
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT.
+
+---
+
+**BeatMap** - Mapeando o som do seu mundo 🎵
+
+Live URL: https://beat-map-ten.vercel.app/

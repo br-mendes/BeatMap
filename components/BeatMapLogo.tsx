@@ -1,4 +1,4 @@
-import React from 'react';
+'use client'
 
 export const BeatMapLogo: React.FC<{ size?: 'sm' | 'md' | 'lg' | 'xl' }> = ({ size = 'md' }) => {
   const dimensions = {
@@ -26,7 +26,7 @@ export const BeatMapLogo: React.FC<{ size?: 'sm' | 'md' | 'lg' | 'xl' }> = ({ si
     <div className="flex items-center gap-3 select-none group">
       <div className={`relative ${dimensions[size]} flex items-center justify-center`}>
         {/* Glow effect with pulse */}
-        <div className={`absolute inset-0 bg-beatmap-primary blur-xl opacity-30 group-hover:opacity-60 transition-opacity duration-500 rounded-full animate-pulse-slow`}></div>
+        <div className={`absolute inset-0 bg-beatmap-primary blur-xl opacity-30 group-hover:opacity-60 transition-opacity duration-500 rounded-full animate-pulse`}></div>
         
         {/* Main Container with Gradient */}
         <div className={`relative w-full h-full bg-gradient-to-br from-beatmap-primary via-[#8b5cf6] to-beatmap-secondary ${rounding[size]} shadow-2xl flex items-center justify-center overflow-hidden transform transition-all duration-500 group-hover:rotate-6 group-hover:scale-105 border border-white/10`}>

@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --beatmap-bg: #0f0f13;
+  --beatmap-card: #1a1a20;
+  --beatmap-primary: #1DB954;
+  --beatmap-secondary: #1ed760;
+  --beatmap-accent: #ff6b35;
+  --beatmap-text: #ffffff;
+  --beatmap-muted: #a0a0a0;
+  --beatmap-border: #2a2a30;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+  }
+
+  html,
+  body {
+    max-width: 100vw;
+    overflow-x: hidden;
+    background-color: var(--beatmap-bg);
+    color: var(--beatmap-text);
+  }
+}
+
+@layer utilities {
+  .bg-beatmap-dark {
+    background-color: var(--beatmap-bg);
+  }
+  
+  .bg-beatmap-card {
+    background-color: var(--beatmap-card);
+  }
+  
+  .bg-beatmap-primary {
+    background-color: var(--beatmap-primary);
+  }
+  
+  .bg-beatmap-secondary {
+    background-color: var(--beatmap-secondary);
+  }
+  
+  .text-beatmap-text {
+    color: var(--beatmap-text);
+  }
+  
+  .text-beatmap-muted {
+    color: var(--beatmap-muted);
+  }
+  
+  .text-beatmap-primary {
+    color: var(--beatmap-primary);
+  }
+  
+  .border-beatmap-border {
+    border-color: var(--beatmap-border);
+  }
+  
+  .border-beatmap-primary {
+    border-color: var(--beatmap-primary);
+  }
+}

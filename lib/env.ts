@@ -1,5 +1,5 @@
 /**
- * Environment configuration manager
+ * Environment configuration manager for Next.js
  * Provides secure access to environment variables with validation
  */
 
@@ -20,7 +20,6 @@ export interface EnvConfig {
 
 class EnvManager {
   private config: EnvConfig;
-  private initialized = false;
 
   constructor() {
     this.config = this.loadConfig();
@@ -28,31 +27,31 @@ class EnvManager {
 
   private loadConfig(): EnvConfig {
     const requiredVars = [
-      'VITE_SUPABASE_URL',
-      'VITE_SUPABASE_ANON_KEY',
-      'VITE_SPOTIFY_CLIENT_ID'
+      'NEXT_PUBLIC_SUPABASE_URL',
+      'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+      'NEXT_PUBLIC_SPOTIFY_CLIENT_ID'
     ];
 
-    const missingVars = requiredVars.filter(varName => !import.meta.env[varName]);
+    const missingVars = requiredVars.filter(varName => !process.env[varName]);
     
-    if (missingVars.length > 0 && import.meta.env.DEV) {
+    if (missingVars.length > 0 && process.env.NODE_ENV === 'development') {
       console.warn('⚠️ Missing environment variables:', missingVars.join(', '));
-      console.warn('Please check your .env file or .env.example for required variables');
+      console.warn('Please check your .env.local file or .env.example for required variables');
     }
 
     return {
-      supabaseUrl: import.meta.env.VITE_SUPABASE_URL || '',
-      supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY || '',
-      spotifyClientId: import.meta.env.VITE_SPOTIFY_CLIENT_ID || '',
-      geminiApiKey: import.meta.env.VITE_GEMINI_API_KEY || '',
-      appName: import.meta.env.VITE_APP_NAME || 'BeatMap',
-      appVersion: import.meta.env.VITE_APP_VERSION || '1.0.0',
-      apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'https://api.spotify.com/v1',
-      cacheTtl: parseInt(import.meta.env.VITE_CACHE_TTL || '1800000'),
-      cachePrefix: import.meta.env.VITE_CACHE_PREFIX || 'beatmap_',
-      enableAnalytics: import.meta.env.VITE_ENABLE_ANALYTICS === 'true',
-      enableNotifications: import.meta.env.VITE_ENABLE_NOTIFICATIONS === 'true',
-      enableDiscovery: import.meta.env.VITE_ENABLE_DISCOVERY === 'true'
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+      supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+      spotifyClientId: process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || '',
+      geminiApiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || '',
+      appName: process.env.NEXT_PUBLIC_APP_NAME || 'BeatMap',
+      appVersion: process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0',
+      apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.spotify.com/v1',
+      cacheTtl: parseInt(process.env.NEXT_PUBLIC_CACHE_TTL || '1800000'),
+      cachePrefix: process.env.NEXT_PUBLIC_CACHE_PREFIX || 'beatmap_',
+      enableAnalytics: process.env.NEXT_PUBLIC_ENABLE_ANALYTICS === 'true',
+      enableNotifications: process.env.NEXT_PUBLIC_ENABLE_NOTIFICATIONS === 'true',
+      enableDiscovery: process.env.NEXT_PUBLIC_ENABLE_DISCOVERY === 'true'
     };
   }
 
@@ -95,15 +94,15 @@ class EnvManager {
   }
 
   public isDevelopment(): boolean {
-    return import.meta.env.DEV;
+    return process.env.NODE_ENV === 'development';
   }
 
   public isProduction(): boolean {
-    return import.meta.env.PROD;
+    return process.env.NODE_ENV === 'production';
   }
 
   public getEnvironment(): string {
-    return import.meta.env.MODE || 'development';
+    return process.env.NODE_ENV || 'development';
   }
 }
 
