@@ -7,7 +7,7 @@ import { LogOut, User as UserIcon } from 'lucide-react';
 import { NotificationCenter } from './NotificationCenter';
 
 interface NavbarProps {
-  user: User | null;
+  user: any;
   onLogout: () => void;
 }
 

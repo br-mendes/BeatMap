@@ -1,7 +1,5 @@
-'use client'
-
-import DashboardShell from './DashboardShell'
+import { redirect } from 'next/navigation'
 
 export default function Dashboard() {
-  return <DashboardShell />
+  redirect('/dashboard/discover')
 }

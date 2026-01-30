@@ -39,7 +39,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ userId }
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const unreadCount = notifications.filter(n => !n.is_read).length;
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   const handleMarkRead = async (id: string) => {
     await markNotificationAsRead(userId, id);
